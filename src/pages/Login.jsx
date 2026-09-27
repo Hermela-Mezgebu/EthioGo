@@ -1,21 +1,15 @@
 import { useState } from "react"
-import { Plane, Eye, EyeOff } from "lucide-react"
+import { Plane } from "lucide-react"
 
-import { signupUser } from "../services/auth"
+import { loginUser } from "../services/auth"
 
-function Signup({
-  onSignup,
+function Login({
   onLogin,
+  onSignup,
   onBack,
 }) {
-  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] =
-    useState("")
-
-  const [showPassword, setShowPassword] =
-    useState(false)
 
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -25,33 +19,20 @@ function Signup({
 
     setError("")
 
-    if (!name || !email || !password) {
-      setError("Please fill in all fields.")
-      return
-    }
-
-    if (password.length < 6) {
-      setError(
-        "Password must be at least 6 characters."
-      )
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.")
+    if (!email || !password) {
+      setError("Please enter your email and password.")
       return
     }
 
     try {
       setLoading(true)
 
-      const user = signupUser({
-        name,
+      const user = loginUser({
         email,
         password,
       })
 
-      onSignup(user)
+      onLogin(user)
     } catch (error) {
       setError(error.message)
     } finally {
@@ -76,11 +57,11 @@ function Signup({
             </div>
 
             <h1 className="text-2xl font-bold text-neutral">
-              Create your account
+              Welcome back
             </h1>
 
             <p className="mt-2 text-sm text-neutral-muted">
-              Join EthioFlight and access your aviation dashboard.
+              Login to your EthioFlight dashboard.
             </p>
           </div>
 
@@ -94,22 +75,6 @@ function Signup({
             onSubmit={handleSubmit}
             className="space-y-5"
           >
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral">
-                Full name
-              </label>
-
-              <input
-                type="text"
-                value={name}
-                onChange={(event) =>
-                  setName(event.target.value)
-                }
-                placeholder="Enter your name"
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
-              />
-            </div>
-
             <div>
               <label className="mb-2 block text-sm font-medium text-neutral">
                 Email
@@ -131,51 +96,13 @@ function Signup({
                 Password
               </label>
 
-              <div className="relative">
-                <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
-                  placeholder="Create a password"
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-12 text-sm outline-none focus:border-primary"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-muted"
-                >
-                  {showPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral">
-                Confirm password
-              </label>
-
               <input
                 type="password"
-                value={confirmPassword}
+                value={password}
                 onChange={(event) =>
-                  setConfirmPassword(
-                    event.target.value
-                  )
+                  setPassword(event.target.value)
                 }
-                placeholder="Confirm your password"
+                placeholder="Enter your password"
                 className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
               />
             </div>
@@ -186,18 +113,18 @@ function Signup({
               className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {loading
-                ? "Creating account..."
-                : "Create account"}
+                ? "Logging in..."
+                : "Login"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-neutral-muted">
-            Already have an account?{" "}
+            Don't have an account?{" "}
             <button
-              onClick={onLogin}
+              onClick={onSignup}
               className="font-semibold text-primary hover:underline"
             >
-              Login
+              Sign up
             </button>
           </p>
         </div>
@@ -206,4 +133,4 @@ function Signup({
   )
 }
 
-export default Signup
+export default Login

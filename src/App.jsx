@@ -1,121 +1,286 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react"
 
+import LandingPage from "./pages/LandingPage"
+import Login from "./pages/Login"
+import Signup from "./pages/Signup"
+import Dashboard from "./pages/Dashboard"
+import FlightSearch from "./pages/FlightSearch"
+import Arrivals from "./pages/Arrivals"
+import DashboardLayout from "./components/layout/DashboardLayout"
+import Departures from "./pages/Departures"
+import Airlines from "./pages/Airlines"
 function App() {
-  const [count, setCount] = useState(0)
+  // ============================================
+  // CURRENT PATH
+  // ============================================
+
+  const [currentPath, setCurrentPath] = useState(
+    window.location.pathname
+  )
+
+  // ============================================
+  // CURRENT USER
+  // ============================================
+
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem(
+      "ethioflight_user"
+    )
+
+    if (!savedUser) {
+      return null
+    }
+
+    try {
+      return JSON.parse(savedUser)
+    } catch (error) {
+      localStorage.removeItem("ethioflight_user")
+      return null
+    }
+  })
+
+  // ============================================
+  // HANDLE BROWSER BACK / FORWARD
+  // ============================================
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname)
+    }
+
+    window.addEventListener(
+      "popstate",
+      handlePopState
+    )
+
+    return () => {
+      window.removeEventListener(
+        "popstate",
+        handlePopState
+      )
+    }
+  }, [])
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+
+  const navigate = (path) => {
+    if (window.location.pathname === path) {
+      return
+    }
+
+    window.history.pushState({}, "", path)
+
+    setCurrentPath(path)
+  }
+
+  // ============================================
+  // AUTHENTICATION
+  // ============================================
+
+  const handleAuthenticated = (authenticatedUser) => {
+    localStorage.setItem(
+      "ethioflight_user",
+      JSON.stringify(authenticatedUser)
+    )
+
+    setUser(authenticatedUser)
+
+    navigate("/dashboard")
+  }
+
+  // ============================================
+  // LOGOUT
+  // ============================================
+
+  const handleLogout = () => {
+    localStorage.removeItem("ethioflight_user")
+
+    setUser(null)
+
+    navigate("/")
+  }
+
+  // ============================================
+  // LANDING PAGE
+  // ============================================
+
+  if (currentPath === "/") {
+    return (
+      <LandingPage
+        user={user}
+        onLogin={() => navigate("/login")}
+        onSignup={() => navigate("/signup")}
+        onDashboard={() => navigate("/dashboard")}
+      />
+    )
+  }
+
+  // ============================================
+  // LOGIN
+  // ============================================
+
+  if (currentPath === "/login") {
+    return (
+      <Login
+        onLogin={handleAuthenticated}
+        onSignup={() => navigate("/signup")}
+        onBack={() => navigate("/")}
+      />
+    )
+  }
+
+  // ============================================
+  // SIGN UP
+  // ============================================
+
+  if (currentPath === "/signup") {
+    return (
+      <Signup
+        onSignup={handleAuthenticated}
+        onLogin={() => navigate("/login")}
+        onBack={() => navigate("/")}
+      />
+    )
+  }
+
+  // ============================================
+  // PROTECTED DASHBOARD PAGES
+  // ============================================
+
+  const protectedPaths = [
+    "/dashboard",
+    "/flights",
+    "/live-map",
+    "/departures",
+    "/arrivals",
+    "/routes",
+    "/airports",
+    "/airlines",
+    "/map",
+    "/settings",
+  ]
+
+  const isProtectedPage =
+    protectedPaths.includes(currentPath)
+
+  if (isProtectedPage) {
+    // --------------------------------------------
+    // User is not logged in
+    // --------------------------------------------
+
+    if (!user) {
+      return (
+        <Login
+          onLogin={handleAuthenticated}
+          onSignup={() => navigate("/signup")}
+          onBack={() => navigate("/")}
+        />
+      )
+    }
+
+    // --------------------------------------------
+    // User is logged in
+    // --------------------------------------------
+
+    return (
+      <DashboardLayout
+        currentPath={currentPath}
+        user={user}
+        onLogout={handleLogout}
+      >
+        {/* ========================================
+            DASHBOARD
+        ======================================== */}
+
+        {currentPath === "/dashboard" && (
+          <Dashboard />
+        )}
+
+        {/* ========================================
+            FLIGHTS
+        ======================================== */}
+
+        {currentPath === "/flights" && (
+          <FlightSearch />
+        )}
+
+        {currentPath === "/departures" && (
+          <Departures />
+        )}
+
+        {/* ========================================
+            FUTURE PAGES
+        ======================================== */}
+
+        {currentPath === "/live-map" && (
+          <div className="p-6">
+            Live Flights page coming soon.
+          </div>
+        )}
+
+        
+
+        {currentPath === "/arrivals" && (
+        <Arrivals />
+      )}
+
+        {currentPath === "/routes" && (
+          <div className="p-6">
+            Routes page coming soon.
+          </div>
+        )}
+
+        {currentPath === "/airports" && (
+          <div className="p-6">
+            Airports page coming soon.
+          </div>
+        )}
+
+        {currentPath === "/airlines" && (
+          <Airlines />
+        )}
+
+        {currentPath === "/map" && (
+          <div className="p-6">
+            Live Map page coming soon.
+          </div>
+        )}
+
+        {currentPath === "/settings" && (
+          <div className="p-6">
+            Settings page coming soon.
+          </div>
+        )}
+      </DashboardLayout>
+    )
+  }
+
+  // ============================================
+  // UNKNOWN PAGE
+  // ============================================
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+        <h1 className="text-xl font-bold text-neutral">
+          Page Not Found
+        </h1>
+
+        <p className="mt-2 text-sm text-neutral/60">
+          The page you are looking for does not exist.
+        </p>
+
         <button
           type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          onClick={() => navigate("/")}
+          className="mt-6 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
         >
-          Count is {count}
+          Go Home
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      </div>
+    </div>
   )
 }
 

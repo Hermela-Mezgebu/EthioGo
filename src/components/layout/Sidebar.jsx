@@ -184,7 +184,7 @@ function Sidebar({
             {/* Brand text */}
             <div className="text-left">
               <p className="text-[17px] font-bold leading-tight tracking-tight text-white">
-                AeroFlight
+                EthioGo
               </p>
 
               <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-white/40">

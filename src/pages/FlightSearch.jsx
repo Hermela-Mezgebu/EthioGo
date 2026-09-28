@@ -412,7 +412,9 @@ function getQueryDescription(searchType, search) {
     return search.airport || "airport";
   }
 
-  return `${search.departure || "origin"} → ${search.arrival || "destination"}`;
+  return `${search.departure || "origin"} → ${
+    search.arrival || "destination"
+  }`;
 }
 
 function downloadFile(filename, content, mimeType) {
@@ -513,7 +515,6 @@ export default function FlightSearch() {
       const flightNo = getFlightNumber(flight).toUpperCase();
       const dep = getAirportCode(flight.departure).toUpperCase();
       const arr = getAirportCode(flight.arrival).toUpperCase();
-      const airline = getAirlineName(flight).toLowerCase();
 
       if (searchType === "flight") {
         if (!flightNumber) return true;
@@ -580,7 +581,6 @@ export default function FlightSearch() {
         );
 
         setError("");
-
         setLastUpdated(new Date());
       } else {
         setFlights([]);
@@ -601,6 +601,7 @@ export default function FlightSearch() {
 
   useEffect(() => {
     handleSearch();
+
     // Initial page load only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -705,26 +706,31 @@ export default function FlightSearch() {
       demo: Boolean(flight?._demo),
     }));
 
-    const headers = Object.keys(rows[0] || {
-      flight: "",
-      airline: "",
-      departure: "",
-      arrival: "",
-      departureTime: "",
-      arrivalTime: "",
-      status: "",
-      aircraft: "",
-      registration: "",
-      demo: "",
-    });
+    const headers = Object.keys(
+      rows[0] || {
+        flight: "",
+        airline: "",
+        departure: "",
+        arrival: "",
+        departureTime: "",
+        arrivalTime: "",
+        status: "",
+        aircraft: "",
+        registration: "",
+        demo: "",
+      }
+    );
 
     const csv = [
       headers.join(","),
       ...rows.map((row) =>
         headers
-          .map((header) =>
-            `"${String(row[header] ?? "")
-              .replaceAll('"', '""')}"`
+          .map(
+            (header) =>
+              `"${String(row[header] ?? "").replaceAll(
+                '"',
+                '""'
+              )}"`
           )
           .join(",")
       ),
@@ -734,7 +740,11 @@ export default function FlightSearch() {
       .toISOString()
       .slice(0, 10)}.csv`;
 
-    downloadFile(filename, csv, "text/csv;charset=utf-8");
+    downloadFile(
+      filename,
+      csv,
+      "text/csv;charset=utf-8"
+    );
   }
 
   /* ------------------------------------------------------------------------ */
@@ -742,22 +752,22 @@ export default function FlightSearch() {
   /* ------------------------------------------------------------------------ */
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB] text-slate-900">
+    <div className="min-h-screen bg-background text-neutral">
       <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#005932] text-white shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-dark text-white shadow-sm">
                 <Plane className="h-5 w-5" />
               </div>
 
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-bold tracking-tight text-neutral">
                   Flight Search
                 </h1>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-neutral-light">
                   Search and inspect flight information from AviationStack.
                 </p>
               </div>
@@ -766,13 +776,13 @@ export default function FlightSearch() {
 
           <div className="flex items-center gap-2">
             {demoMode ? (
-              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-800">
+              <span className="inline-flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-warning">
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Demo Mode
               </span>
             ) : (
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-success">
+                <span className="h-2 w-2 rounded-full bg-success" />
                 Live AviationStack
               </span>
             )}
@@ -781,31 +791,31 @@ export default function FlightSearch() {
 
         {/* Demo mode banner */}
         {demoMode && (
-          <div className="mb-6 overflow-hidden rounded-xl border border-amber-300 bg-amber-50 shadow-sm">
+          <div className="mb-6 overflow-hidden rounded-xl border border-warning/40 bg-warning/10 shadow-sm">
             <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning">
                 <ShieldAlert className="h-5 w-5" />
               </div>
 
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold text-amber-900">
+                  <h2 className="font-semibold text-neutral">
                     DEMO DATA MODE
                   </h2>
 
-                  <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-900">
+                  <span className="rounded-full bg-warning/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
                     Not Live
                   </span>
                 </div>
 
-                <p className="mt-1 text-sm leading-6 text-amber-800">
+                <p className="mt-1 text-sm leading-6 text-neutral-light">
                   AviationStack could not provide live results because its
                   monthly API usage limit has been reached. The page is
                   displaying clearly labeled local demo flights so you can
                   continue testing the search and flight-detail interface.
                 </p>
 
-                <p className="mt-2 text-xs text-amber-700">
+                <p className="mt-2 text-xs text-neutral-muted">
                   {demoReason}
                 </p>
               </div>
@@ -814,7 +824,7 @@ export default function FlightSearch() {
                 type="button"
                 onClick={handleSearch}
                 disabled={loading}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-800 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-warning/40 bg-surface px-3 py-2 text-sm font-semibold text-warning shadow-sm transition hover:bg-warning/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${
@@ -829,16 +839,16 @@ export default function FlightSearch() {
 
         {/* Error */}
         {error && !demoMode && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
+          <div className="mb-6 rounded-xl border border-danger/30 bg-danger/10 p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
 
               <div>
-                <h3 className="font-semibold text-red-900">
+                <h3 className="font-semibold text-neutral">
                   AviationStack connection error
                 </h3>
 
-                <p className="mt-1 text-sm leading-6 text-red-700">
+                <p className="mt-1 text-sm leading-6 text-danger">
                   {error}
                 </p>
               </div>
@@ -849,7 +859,7 @@ export default function FlightSearch() {
         {/* Search Card */}
         <form
           onSubmit={handleSearch}
-          className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+          className="mb-6 rounded-xl border border-border bg-surface p-4 shadow-sm"
         >
           {/* Search type */}
           <div className="mb-4 flex flex-wrap gap-2">
@@ -864,8 +874,8 @@ export default function FlightSearch() {
                 onClick={() => setSearchType(value)}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                   searchType === value
-                    ? "bg-[#005932] text-white shadow-sm"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-primary-dark text-white shadow-sm"
+                    : "bg-primary-light text-neutral-light hover:bg-primary/10 hover:text-neutral"
                 }`}
               >
                 {label}
@@ -877,12 +887,12 @@ export default function FlightSearch() {
             {searchType === "route" && (
               <>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-neutral-light">
                     Departure
                   </label>
 
                   <div className="relative">
-                    <PlaneTakeoff className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <PlaneTakeoff className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-muted" />
 
                     <input
                       value={search.departure}
@@ -894,7 +904,7 @@ export default function FlightSearch() {
                       }
                       placeholder="ADD"
                       maxLength={4}
-                      className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 font-mono text-sm font-semibold uppercase outline-none transition focus:border-[#005932] focus:ring-2 focus:ring-[#005932]/10"
+                      className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 font-mono text-sm font-semibold uppercase text-neutral outline-none transition placeholder:text-neutral-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
                     />
                   </div>
                 </div>
@@ -902,19 +912,19 @@ export default function FlightSearch() {
                 <button
                   type="button"
                   onClick={swapRoute}
-                  className="mt-6 flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-[#005932]"
+                  className="mt-6 flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface text-neutral-light transition hover:bg-primary-light hover:text-primary-dark"
                   title="Swap route"
                 >
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-neutral-light">
                     Arrival
                   </label>
 
                   <div className="relative">
-                    <PlaneLanding className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <PlaneLanding className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-muted" />
 
                     <input
                       value={search.arrival}
@@ -926,7 +936,7 @@ export default function FlightSearch() {
                       }
                       placeholder="NBO"
                       maxLength={4}
-                      className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 font-mono text-sm font-semibold uppercase outline-none transition focus:border-[#005932] focus:ring-2 focus:ring-[#005932]/10"
+                      className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 font-mono text-sm font-semibold uppercase text-neutral outline-none transition placeholder:text-neutral-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
                     />
                   </div>
                 </div>
@@ -935,12 +945,12 @@ export default function FlightSearch() {
 
             {searchType === "flight" && (
               <div className="lg:col-span-2">
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-neutral-light">
                   Flight Number
                 </label>
 
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-muted" />
 
                   <input
                     value={search.flightNumber}
@@ -951,7 +961,7 @@ export default function FlightSearch() {
                       )
                     }
                     placeholder="ET302"
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 font-mono text-sm font-semibold uppercase outline-none transition focus:border-[#005932] focus:ring-2 focus:ring-[#005932]/10"
+                    className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 font-mono text-sm font-semibold uppercase text-neutral outline-none transition placeholder:text-neutral-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
@@ -959,12 +969,12 @@ export default function FlightSearch() {
 
             {searchType === "airport" && (
               <div className="lg:col-span-2">
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-neutral-light">
                   Airport IATA / ICAO
                 </label>
 
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-muted" />
 
                   <input
                     value={search.airport}
@@ -976,19 +986,19 @@ export default function FlightSearch() {
                     }
                     placeholder="ADD"
                     maxLength={4}
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 font-mono text-sm font-semibold uppercase outline-none transition focus:border-[#005932] focus:ring-2 focus:ring-[#005932]/10"
+                    className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 font-mono text-sm font-semibold uppercase text-neutral outline-none transition placeholder:text-neutral-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-neutral-light">
                 Date
               </label>
 
               <div className="relative">
-                <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-muted" />
 
                 <input
                   type="date"
@@ -996,7 +1006,7 @@ export default function FlightSearch() {
                   onChange={(e) =>
                     updateSearch("flightDate", e.target.value)
                   }
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none transition focus:border-[#005932] focus:ring-2 focus:ring-[#005932]/10"
+                  className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-neutral outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                 />
               </div>
             </div>
@@ -1004,7 +1014,7 @@ export default function FlightSearch() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#005932] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#004a2a] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary-dark px-5 text-sm font-bold text-white shadow-sm transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Search className="h-4 w-4" />
 
@@ -1017,21 +1027,21 @@ export default function FlightSearch() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-neutral">
                 Flight Results
               </h2>
 
               {demoMode && (
-                <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                <span className="rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-warning">
                   Demo
                 </span>
               )}
             </div>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-neutral-light">
               {filteredFlights.length} result
               {filteredFlights.length === 1 ? "" : "s"} for{" "}
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-neutral">
                 {getQueryDescription(searchType, search)}
               </span>
             </p>
@@ -1039,7 +1049,7 @@ export default function FlightSearch() {
 
           <div className="flex flex-wrap items-center gap-2">
             {lastUpdated && (
-              <span className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5 text-xs text-neutral-light">
                 <Clock3 className="h-3.5 w-3.5" />
                 Updated {formatTime(lastUpdated)}
               </span>
@@ -1049,7 +1059,7 @@ export default function FlightSearch() {
               type="button"
               onClick={handleSearch}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-neutral shadow-sm transition hover:bg-primary-light disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-4 w-4 ${
@@ -1063,7 +1073,7 @@ export default function FlightSearch() {
               type="button"
               onClick={exportCSV}
               disabled={!filteredFlights.length}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-neutral shadow-sm transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="h-4 w-4" />
               CSV
@@ -1073,7 +1083,7 @@ export default function FlightSearch() {
               type="button"
               onClick={exportJSON}
               disabled={!filteredFlights.length}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-neutral shadow-sm transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
             >
               <FileJson className="h-4 w-4" />
               JSON
@@ -1082,8 +1092,8 @@ export default function FlightSearch() {
         </div>
 
         {/* Filters */}
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-neutral-muted">
             <Filter className="h-4 w-4" />
             Filters
           </div>
@@ -1094,7 +1104,7 @@ export default function FlightSearch() {
               setAirlineFilter(e.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#005932]"
+            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-medium text-neutral outline-none focus:border-primary"
           >
             <option value="all">All Airlines</option>
 
@@ -1111,7 +1121,7 @@ export default function FlightSearch() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#005932]"
+            className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-medium text-neutral outline-none focus:border-primary"
           >
             <option value="all">All Statuses</option>
             <option value="scheduled">Scheduled</option>
@@ -1131,7 +1141,7 @@ export default function FlightSearch() {
                 setStatusFilter("all");
                 setPage(1);
               }}
-              className="text-sm font-semibold text-[#005932] hover:underline"
+              className="text-sm font-semibold text-primary-dark hover:underline"
             >
               Clear filters
             </button>
@@ -1140,14 +1150,14 @@ export default function FlightSearch() {
 
         {/* Loading */}
         {loading && (
-          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <RefreshCw className="mx-auto h-8 w-8 animate-spin text-[#005932]" />
+          <div className="rounded-xl border border-border bg-surface p-10 text-center shadow-sm">
+            <RefreshCw className="mx-auto h-8 w-8 animate-spin text-primary" />
 
-            <p className="mt-4 font-semibold text-slate-800">
+            <p className="mt-4 font-semibold text-neutral">
               Loading flight data...
             </p>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-neutral-light">
               Connecting to AviationStack.
             </p>
           </div>
@@ -1157,46 +1167,46 @@ export default function FlightSearch() {
         {!loading && (
           <>
             {visibleFlights.length > 0 ? (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[950px] text-left">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50">
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                      <tr className="border-b border-divider bg-background">
+                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Flight
                         </th>
 
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Airline
                         </th>
 
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Route
                         </th>
 
-                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Aircraft
                         </th>
 
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Departure
                         </th>
 
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Arrival
                         </th>
 
-                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Status
                         </th>
 
-                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-neutral-light">
                           Action
                         </th>
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-divider">
                       {visibleFlights.map((flight, index) => (
                         <FlightRow
                           key={`${getFlightNumber(flight)}-${index}`}
@@ -1209,23 +1219,23 @@ export default function FlightSearch() {
                 </div>
 
                 {/* Pagination */}
-                <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-slate-500">
+                <div className="flex flex-col gap-3 border-t border-divider bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-neutral-light">
                     Showing{" "}
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-neutral">
                       {filteredFlights.length === 0
                         ? 0
                         : (currentPage - 1) * PAGE_SIZE + 1}
                     </span>
                     {" – "}
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-neutral">
                       {Math.min(
                         currentPage * PAGE_SIZE,
                         filteredFlights.length
                       )}
                     </span>{" "}
                     of{" "}
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-neutral">
                       {filteredFlights.length}
                     </span>
                   </p>
@@ -1235,14 +1245,16 @@ export default function FlightSearch() {
                       type="button"
                       disabled={currentPage <= 1}
                       onClick={() =>
-                        setPage((value) => Math.max(1, value - 1))
+                        setPage((value) =>
+                          Math.max(1, value - 1)
+                        )
                       }
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-neutral-light shadow-sm transition hover:bg-primary-light hover:text-neutral disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
 
-                    <span className="min-w-[80px] text-center text-sm font-semibold text-slate-600">
+                    <span className="min-w-[80px] text-center text-sm font-semibold text-neutral-light">
                       Page {currentPage} / {totalPages}
                     </span>
 
@@ -1254,7 +1266,7 @@ export default function FlightSearch() {
                           Math.min(totalPages, value + 1)
                         )
                       }
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-neutral-light shadow-sm transition hover:bg-primary-light hover:text-neutral disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1271,16 +1283,16 @@ export default function FlightSearch() {
         )}
 
         {/* Informational note */}
-        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <Info className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-neutral-muted" />
 
             <div>
-              <h3 className="font-semibold text-slate-800">
+              <h3 className="font-semibold text-neutral">
                 Flight data availability
               </h3>
 
-              <p className="mt-1 text-sm leading-6 text-slate-500">
+              <p className="mt-1 text-sm leading-6 text-neutral-light">
                 Flight details shown here are limited to fields returned by
                 the AviationStack response. Live coordinates, altitude,
                 heading, speed, radar frequency, baggage carousel and other
@@ -1334,16 +1346,16 @@ function FlightRow({ flight, onView }) {
         }
       }}
       tabIndex={0}
-      className="cursor-pointer transition-colors hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+      className="cursor-pointer transition-colors hover:bg-primary-light/60 focus:bg-primary-light/60 focus:outline-none"
     >
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-slate-900">
+          <span className="font-mono text-sm font-bold text-neutral">
             {flightNumber}
           </span>
 
           {flight?._demo && (
-            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800">
+            <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-warning">
               Demo
             </span>
           )}
@@ -1352,18 +1364,18 @@ function FlightRow({ flight, onView }) {
 
       <td className="px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#005932] text-[10px] font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-dark text-[10px] font-bold text-white">
             {airlineIata !== "—"
               ? airlineIata
               : airline.slice(0, 2).toUpperCase()}
           </div>
 
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-slate-800">
+            <div className="truncate text-sm font-semibold text-neutral">
               {airline}
             </div>
 
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-neutral-muted">
               {airlineIata}
             </div>
           </div>
@@ -1373,23 +1385,23 @@ function FlightRow({ flight, onView }) {
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           <div>
-            <div className="font-mono text-sm font-bold text-slate-800">
+            <div className="font-mono text-sm font-bold text-neutral">
               {getAirportCode(departure)}
             </div>
 
-            <div className="max-w-[150px] truncate text-xs text-slate-400">
+            <div className="max-w-[150px] truncate text-xs text-neutral-muted">
               {getAirportName(departure)}
             </div>
           </div>
 
-          <ArrowLeftRight className="h-4 w-4 shrink-0 text-slate-300" />
+          <ArrowLeftRight className="h-4 w-4 shrink-0 text-neutral-muted" />
 
           <div>
-            <div className="font-mono text-sm font-bold text-slate-800">
+            <div className="font-mono text-sm font-bold text-neutral">
               {getAirportCode(arrival)}
             </div>
 
-            <div className="max-w-[150px] truncate text-xs text-slate-400">
+            <div className="max-w-[150px] truncate text-xs text-neutral-muted">
               {getAirportName(arrival)}
             </div>
           </div>
@@ -1397,17 +1409,17 @@ function FlightRow({ flight, onView }) {
       </td>
 
       <td className="px-4 py-4">
-        <div className="font-mono text-sm font-semibold text-slate-700">
+        <div className="font-mono text-sm font-semibold text-neutral">
           {aircraft}
         </div>
 
-        <div className="mt-0.5 text-xs text-slate-400">
+        <div className="mt-0.5 text-xs text-neutral-muted">
           {registration}
         </div>
       </td>
 
       <td className="px-4 py-4 text-right">
-        <div className="font-mono text-sm font-semibold text-slate-700">
+        <div className="font-mono text-sm font-semibold text-neutral">
           {formatTime(
             departure.actual ||
               departure.estimated ||
@@ -1415,7 +1427,7 @@ function FlightRow({ flight, onView }) {
           )}
         </div>
 
-        <div className="mt-0.5 text-xs text-slate-400">
+        <div className="mt-0.5 text-xs text-neutral-muted">
           {departure.actual
             ? "Actual"
             : departure.estimated
@@ -1425,7 +1437,7 @@ function FlightRow({ flight, onView }) {
       </td>
 
       <td className="px-4 py-4 text-right">
-        <div className="font-mono text-sm font-semibold text-slate-700">
+        <div className="font-mono text-sm font-semibold text-neutral">
           {formatTime(
             arrival.actual ||
               arrival.estimated ||
@@ -1433,7 +1445,7 @@ function FlightRow({ flight, onView }) {
           )}
         </div>
 
-        <div className="mt-0.5 text-xs text-slate-400">
+        <div className="mt-0.5 text-xs text-neutral-muted">
           {arrival.actual
             ? "Actual"
             : arrival.estimated
@@ -1456,7 +1468,7 @@ function FlightRow({ flight, onView }) {
             event.stopPropagation();
             onView();
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-[#005932] hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-light px-3 py-2 text-xs font-bold text-neutral transition hover:bg-primary hover:text-white"
         >
           View Flight
           <ExternalLink className="h-3.5 w-3.5" />
@@ -1473,24 +1485,24 @@ function FlightRow({ flight, onView }) {
 function StatusBadge({ status, statusKey }) {
   const styles = {
     scheduled:
-      "bg-blue-50 text-blue-700 border-blue-200",
+      "bg-info/10 text-info border-info/30",
     active:
-      "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "bg-success/10 text-success border-success/30",
     "en-route":
-      "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "bg-success/10 text-success border-success/30",
     landed:
-      "bg-slate-100 text-slate-700 border-slate-200",
+      "bg-background text-neutral-light border-border",
     delayed:
-      "bg-amber-50 text-amber-700 border-amber-200",
+      "bg-warning/10 text-warning border-warning/30",
     cancelled:
-      "bg-red-50 text-red-700 border-red-200",
+      "bg-danger/10 text-danger border-danger/30",
   };
 
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${
         styles[statusKey] ||
-        "border-slate-200 bg-slate-50 text-slate-600"
+        "border-border bg-background text-neutral-light"
       }`}
     >
       <span className="mr-1.5 mt-1 h-1.5 w-1.5 rounded-full bg-current" />
@@ -1505,16 +1517,16 @@ function StatusBadge({ status, statusKey }) {
 
 function EmptyState({ demoMode, onRetry }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
-        <Plane className="h-6 w-6 text-slate-400" />
+    <div className="rounded-xl border border-border bg-surface p-12 text-center shadow-sm">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-light">
+        <Plane className="h-6 w-6 text-primary" />
       </div>
 
-      <h3 className="mt-4 font-semibold text-slate-800">
+      <h3 className="mt-4 font-semibold text-neutral">
         No flights found
       </h3>
 
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-light">
         {demoMode
           ? "There are no matching demo flights for this search."
           : "Try another flight number, airport, route, or date."}
@@ -1523,7 +1535,7 @@ function EmptyState({ demoMode, onRetry }) {
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#005932] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#004a2a]"
+        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary-dark px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary"
       >
         <RefreshCw className="h-4 w-4" />
         Search Again
@@ -1575,24 +1587,24 @@ function FlightDetailsModal({ flight, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         {/* Modal header */}
-        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div className="flex items-start justify-between border-b border-border bg-surface px-5 py-4 sm:px-6">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xl font-bold text-slate-900">
+              <span className="font-mono text-xl font-bold text-neutral">
                 {getFlightNumber(flight)}
               </span>
 
               {flight?._demo && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/40 bg-warning/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-warning">
                   <ShieldAlert className="h-3 w-3" />
                   Demo Data
                 </span>
@@ -1604,7 +1616,7 @@ function FlightDetailsModal({ flight, onClose }) {
               />
             </div>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-neutral-light">
               {airline?.name ||
                 airline?.iata ||
                 "Unknown airline"}
@@ -1614,7 +1626,7 @@ function FlightDetailsModal({ flight, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-muted transition hover:bg-primary-light hover:text-neutral"
             aria-label="Close flight details"
           >
             <X className="h-5 w-5" />
@@ -1622,18 +1634,18 @@ function FlightDetailsModal({ flight, onClose }) {
         </div>
 
         {/* Modal body */}
-        <div className="overflow-y-auto p-5 sm:p-6">
+        <div className="overflow-y-auto bg-surface p-5 sm:p-6">
           {flight?._demo && (
-            <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <div className="mb-5 rounded-xl border border-warning/40 bg-warning/10 p-4">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
 
                 <div>
-                  <p className="font-semibold text-amber-900">
+                  <p className="font-semibold text-neutral">
                     This flight is demo data
                   </p>
 
-                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                  <p className="mt-1 text-sm leading-6 text-neutral-light">
                     It is being displayed because AviationStack's monthly
                     usage quota has been reached. These values are local
                     development data and are not a live flight feed.
@@ -1644,7 +1656,7 @@ function FlightDetailsModal({ flight, onClose }) {
           )}
 
           {/* Route */}
-          <section className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <section className="rounded-xl border border-border bg-background p-5">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto_1fr] md:items-center">
               <DetailAirport
                 icon={<PlaneTakeoff className="h-5 w-5" />}
@@ -1652,7 +1664,7 @@ function FlightDetailsModal({ flight, onClose }) {
                 airport={departure}
               />
 
-              <div className="hidden h-px w-20 bg-slate-300 md:block" />
+              <div className="hidden h-px w-20 bg-divider md:block" />
 
               <DetailAirport
                 icon={<PlaneLanding className="h-5 w-5" />}
@@ -1836,18 +1848,18 @@ function FlightDetailsModal({ flight, onClose }) {
           </section>
 
           {/* Telemetry */}
-          <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5">
+          <section className="mt-5 rounded-xl border border-border bg-surface p-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
                 <Info className="h-5 w-5" />
               </div>
 
               <div>
-                <h3 className="font-semibold text-slate-800">
+                <h3 className="font-semibold text-neutral">
                   Live Position Telemetry
                 </h3>
 
-                <p className="mt-1 text-sm leading-6 text-slate-500">
+                <p className="mt-1 text-sm leading-6 text-neutral-light">
                   Latitude, longitude, altitude, heading, ground speed and
                   similar live radar telemetry are not available in this
                   AviationStack flight response, so they are intentionally
@@ -1880,20 +1892,20 @@ function FlightDetailsModal({ flight, onClose }) {
           </section>
 
           {/* API response */}
-          <details className="mt-5 overflow-hidden rounded-xl border border-slate-200">
-            <summary className="cursor-pointer bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+          <details className="mt-5 overflow-hidden rounded-xl border border-border">
+            <summary className="cursor-pointer bg-background px-4 py-3 text-sm font-semibold text-neutral">
               View API response
             </summary>
 
-            <pre className="max-h-80 overflow-auto bg-slate-950 p-4 text-xs leading-5 text-slate-200">
+            <pre className="max-h-80 overflow-auto bg-[#0b1713] p-4 text-xs leading-5 text-white">
               {JSON.stringify(flight, null, 2)}
             </pre>
           </details>
         </div>
 
         {/* Modal footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
-          <span className="text-xs text-slate-400">
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-background px-5 py-4 sm:px-6">
+          <span className="text-xs text-neutral-muted">
             {flight?._demo
               ? "Local demo record"
               : "AviationStack flight record"}
@@ -1902,7 +1914,7 @@ function FlightDetailsModal({ flight, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-[#005932] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#004a2a]"
+            className="rounded-lg bg-primary-dark px-4 py-2 text-sm font-bold text-white transition hover:bg-primary"
           >
             Close
           </button>
@@ -1919,22 +1931,22 @@ function FlightDetailsModal({ flight, onClose }) {
 function DetailAirport({ icon, label, airport }) {
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+      <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-neutral-light">
         {icon}
         {label}
       </div>
 
-      <div className="font-mono text-3xl font-bold text-slate-900">
+      <div className="font-mono text-3xl font-bold text-neutral">
         {getAirportCode(airport)}
       </div>
 
-      <div className="mt-1 text-sm font-medium text-slate-600">
+      <div className="mt-1 text-sm font-medium text-neutral-light">
         {getAirportName(airport)}
       </div>
 
-      <div className="mt-2 text-xs text-slate-400">
+      <div className="mt-2 text-xs text-neutral-muted">
         ICAO:{" "}
-        <span className="font-mono font-semibold text-slate-600">
+        <span className="font-mono font-semibold text-neutral">
           {airport?.icao || "—"}
         </span>
       </div>
@@ -1945,11 +1957,11 @@ function DetailAirport({ icon, label, airport }) {
 function SectionTitle({ icon, title }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <div className="text-[#005932]">
+      <div className="text-primary">
         {icon}
       </div>
 
-      <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">
+      <h3 className="text-sm font-bold uppercase tracking-wide text-neutral">
         {title}
       </h3>
     </div>
@@ -1958,13 +1970,13 @@ function SectionTitle({ icon, title }) {
 
 function DetailItem({ label, value, mono = false }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+    <div className="rounded-lg border border-border bg-background p-3">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-muted">
         {label}
       </div>
 
       <div
-        className={`mt-1 break-words text-sm font-semibold text-slate-800 ${
+        className={`mt-1 break-words text-sm font-semibold text-neutral ${
           mono ? "font-mono" : ""
         }`}
       >

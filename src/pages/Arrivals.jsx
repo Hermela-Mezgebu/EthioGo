@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { getLiveFlights } from "../services/aviationStack";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AirVent,
   Bell,
@@ -13,7 +11,6 @@ import {
   Gauge,
   Luggage,
   MapPin,
-  Navigation,
   PlaneLanding,
   Printer,
   Radar,
@@ -23,32 +20,31 @@ import {
   Timer,
   Wind,
   X,
-} from "lucide-react"
+} from "lucide-react";
 
-
-
+import { getLiveFlights } from "../services/aviationStack";
 
 const AIRPORT_CODE =
-  import.meta.env.VITE_AIRPORT_CODE || "ADD"
+  import.meta.env.VITE_AIRPORT_CODE || "ADD";
 
 const AIRPORT_ICAO =
-  import.meta.env.VITE_AIRPORT_ICAO || "HAAB"
+  import.meta.env.VITE_AIRPORT_ICAO || "HAAB";
 
 const AIRPORT_NAME =
   import.meta.env.VITE_AIRPORT_NAME ||
-  "Bole International Airport"
+  "Bole International Airport";
 
 const AIRPORT_LOCATION =
   import.meta.env.VITE_AIRPORT_LOCATION ||
-  "Addis Ababa, Ethiopia"
+  "Addis Ababa, Ethiopia";
 
-const ITEMS_PER_PAGE = 8
+const ITEMS_PER_PAGE = 8;
 
 const TERMINALS = [
   { value: "all", label: "All Terminals" },
   { value: "T1", label: "T1" },
   { value: "T2", label: "T2" },
-]
+];
 
 const STATUSES = [
   { value: "all", label: "All Status" },
@@ -57,7 +53,7 @@ const STATUSES = [
   { value: "Scheduled", label: "Scheduled" },
   { value: "En Route", label: "En Route" },
   { value: "Final Approach", label: "Final Approach" },
-]
+];
 
 const TIME_RANGES = [
   { value: "today", label: "Today" },
@@ -65,39 +61,7 @@ const TIME_RANGES = [
   { value: "next-6h", label: "Next 6 Hours" },
   { value: "next-12h", label: "Next 12 Hours" },
   { value: "next-24h", label: "Next 24 Hours" },
-]
-
-function getApiUrl(endpoint) {
-  if (!endpoint) {
-    return API_BASE_URL
-  }
-
-  if (
-    endpoint.startsWith("http://") ||
-    endpoint.startsWith("https://")
-  ) {
-    return endpoint
-  }
-
-  return `${API_BASE_URL.replace(/\/$/, "")}/${endpoint.replace(
-    /^\//,
-    ""
-  )}`
-}
-
-function getAuthHeaders() {
-  const token =
-    localStorage.getItem("ethioflight_token") ||
-    localStorage.getItem("access_token")
-
-  if (!token) {
-    return {}
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-  }
-}
+];
 
 function safeValue(value, fallback = "—") {
   if (
@@ -105,34 +69,34 @@ function safeValue(value, fallback = "—") {
     value === null ||
     value === ""
   ) {
-    return fallback
+    return fallback;
   }
 
-  return String(value)
+  return String(value);
 }
 
 function getArrayFromResponse(payload) {
   if (Array.isArray(payload)) {
-    return payload
+    return payload;
   }
 
   if (Array.isArray(payload?.data)) {
-    return payload.data
+    return payload.data;
   }
 
   if (Array.isArray(payload?.flights)) {
-    return payload.flights
+    return payload.flights;
   }
 
   if (Array.isArray(payload?.arrivals)) {
-    return payload.arrivals
+    return payload.arrivals;
   }
 
   if (Array.isArray(payload?.results)) {
-    return payload.results
+    return payload.results;
   }
 
-  return []
+  return [];
 }
 
 function firstValue(...values) {
@@ -141,7 +105,7 @@ function firstValue(...values) {
       value !== undefined &&
       value !== null &&
       value !== ""
-  )
+  );
 }
 
 function normalizeStatus(status, flight) {
@@ -153,27 +117,27 @@ function normalizeStatus(status, flight) {
     ) || ""
   )
     .toLowerCase()
-    .trim()
+    .trim();
 
   if (
     rawStatus.includes("landed") ||
     rawStatus.includes("arrived")
   ) {
-    return "Landed"
+    return "Landed";
   }
 
   if (
     rawStatus.includes("delay") ||
     rawStatus.includes("delayed")
   ) {
-    return "Delayed"
+    return "Delayed";
   }
 
   if (
     rawStatus.includes("approach") ||
     rawStatus.includes("final")
   ) {
-    return "Final Approach"
+    return "Final Approach";
   }
 
   if (
@@ -181,66 +145,70 @@ function normalizeStatus(status, flight) {
     rawStatus.includes("en route") ||
     rawStatus.includes("enroute")
   ) {
-    return "En Route"
+    return "En Route";
   }
 
   if (
     rawStatus.includes("scheduled") ||
     rawStatus.includes("planned")
   ) {
-    return "Scheduled"
+    return "Scheduled";
   }
 
   /*
-   * If the backend doesn't send a status, infer a display
-   * status from the arrival timestamps.
+   * If the backend doesn't send a status,
+   * infer a display status from arrival timestamps.
    */
-  const arrival = flight?.arrival || {}
+  const arrival = flight?.arrival || {};
 
   const actual = firstValue(
     arrival.actual,
     arrival.actual_time,
     flight?.actual_arrival
-  )
+  );
 
   if (actual) {
-    return "Landed"
+    return "Landed";
   }
 
   const estimated = firstValue(
     arrival.estimated,
     arrival.estimated_time,
     flight?.estimated_arrival
-  )
+  );
 
   const scheduled = firstValue(
     arrival.scheduled,
     arrival.scheduled_time,
     flight?.scheduled_arrival
-  )
+  );
 
   if (estimated && scheduled) {
-    const estimatedTime = new Date(estimated).getTime()
-    const scheduledTime = new Date(scheduled).getTime()
+    const estimatedTime =
+      new Date(estimated).getTime();
+
+    const scheduledTime =
+      new Date(scheduled).getTime();
 
     if (
       Number.isFinite(estimatedTime) &&
       Number.isFinite(scheduledTime) &&
-      estimatedTime - scheduledTime > 10 * 60 * 1000
+      estimatedTime - scheduledTime >
+        10 * 60 * 1000
     ) {
-      return "Delayed"
+      return "Delayed";
     }
   }
 
-  return "Scheduled"
+  return "Scheduled";
 }
 
 function normalizeFlight(item, index) {
-  const flight = item?.flight || {}
-  const airline = item?.airline || {}
-  const departure = item?.departure || {}
-  const arrival = item?.arrival || {}
-  const aircraft = item?.aircraft || {}
+  const flight = item?.flight || {};
+  const airline = item?.airline || {};
+  const departure = item?.departure || {};
+  const arrival = item?.arrival || {};
+  const aircraft = item?.aircraft || {};
 
   const flightNumber = firstValue(
     flight?.iata,
@@ -248,14 +216,14 @@ function normalizeFlight(item, index) {
     item?.flight_number,
     item?.flightNumber,
     `FL-${index + 1}`
-  )
+  );
 
   const airlineName = firstValue(
     airline?.name,
     item?.airline_name,
     item?.airlineName,
     "Unknown Airline"
-  )
+  );
 
   const airlineCode = firstValue(
     airline?.iata,
@@ -263,7 +231,7 @@ function normalizeFlight(item, index) {
     item?.airline_code,
     item?.airlineCode,
     "—"
-  )
+  );
 
   const origin = firstValue(
     departure?.airport,
@@ -271,7 +239,7 @@ function normalizeFlight(item, index) {
     item?.origin,
     item?.origin_name,
     "Unknown Origin"
-  )
+  );
 
   const originCode = firstValue(
     departure?.iata,
@@ -279,14 +247,14 @@ function normalizeFlight(item, index) {
     item?.origin_code,
     item?.originCode,
     ""
-  )
+  );
 
   const originCountry = firstValue(
     departure?.country,
     item?.origin_country,
     item?.originCountry,
     ""
-  )
+  );
 
   const aircraftModel = firstValue(
     aircraft?.model?.text,
@@ -294,21 +262,21 @@ function normalizeFlight(item, index) {
     item?.aircraft_model,
     item?.aircraftModel,
     "Unknown Aircraft"
-  )
+  );
 
   const registration = firstValue(
     aircraft?.registration,
     item?.tail_number,
     item?.registration,
     ""
-  )
+  );
 
   const scheduledArrival = firstValue(
     arrival?.scheduled,
     arrival?.scheduled_time,
     item?.scheduled_arrival,
     item?.scheduledArrival
-  )
+  );
 
   const estimatedArrival = firstValue(
     arrival?.estimated,
@@ -316,26 +284,26 @@ function normalizeFlight(item, index) {
     item?.estimated_arrival,
     item?.estimatedArrival,
     scheduledArrival
-  )
+  );
 
   const actualArrival = firstValue(
     arrival?.actual,
     arrival?.actual_time,
     item?.actual_arrival,
     item?.actualArrival
-  )
+  );
 
   const terminal = firstValue(
     arrival?.terminal,
     item?.terminal,
     "—"
-  )
+  );
 
   const gate = firstValue(
     arrival?.gate,
     item?.gate,
     "—"
-  )
+  );
 
   const baggage = firstValue(
     arrival?.baggage,
@@ -343,7 +311,7 @@ function normalizeFlight(item, index) {
     arrival?.baggage_belt,
     item?.baggage_belt,
     "—"
-  )
+  );
 
   const status = normalizeStatus(
     firstValue(
@@ -352,7 +320,7 @@ function normalizeFlight(item, index) {
       flight?.status
     ),
     item
-  )
+  );
 
   return {
     id:
@@ -365,61 +333,55 @@ function normalizeFlight(item, index) {
     flightNumber,
     airlineName,
     airlineCode,
-
     origin,
     originCode,
     originCountry,
-
     aircraftModel,
     registration,
-
     scheduledArrival,
     estimatedArrival,
     actualArrival,
-
     terminal,
     gate,
     baggage,
-
     status,
-
     raw: item,
-  }
+  };
 }
 
 function formatTime(value) {
   if (!value) {
-    return "—"
+    return "—";
   }
 
-  const date = new Date(value)
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return String(value)
+    return String(value);
   }
 
   return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(date)
+  }).format(date);
 }
 
 function formatDateTime(value) {
   if (!value) {
-    return "—"
+    return "—";
   }
 
-  const date = new Date(value)
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return String(value)
+    return String(value);
   }
 
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date)
+  }).format(date);
 }
 
 function getDelayMinutes(flight) {
@@ -427,113 +389,118 @@ function getDelayMinutes(flight) {
     !flight?.scheduledArrival ||
     !flight?.estimatedArrival
   ) {
-    return 0
+    return 0;
   }
 
   const scheduled = new Date(
     flight.scheduledArrival
-  ).getTime()
+  ).getTime();
 
   const estimated = new Date(
     flight.estimatedArrival
-  ).getTime()
+  ).getTime();
 
   if (
     !Number.isFinite(scheduled) ||
     !Number.isFinite(estimated)
   ) {
-    return 0
+    return 0;
   }
 
   return Math.round(
     (estimated - scheduled) / 60000
-  )
+  );
 }
 
 function getStatusLabel(flight) {
-  const delay = getDelayMinutes(flight)
+  const delay = getDelayMinutes(flight);
 
   if (
     flight.status === "Delayed" &&
     delay > 0
   ) {
-    return `+${delay}m Late`
+    return `+${delay}m Late`;
   }
 
   if (flight.status === "Landed") {
-    return "Touchdown"
+    return "Touchdown";
   }
 
   if (flight.status === "Final Approach") {
-    return "Final Approach"
+    return "Final Approach";
   }
 
   if (flight.status === "En Route") {
-    return "En Route"
+    return "En Route";
   }
 
   if (delay < 0) {
-    return `${Math.abs(delay)}m Early`
+    return `${Math.abs(delay)}m Early`;
   }
 
-  return "On Time"
+  return "On Time";
 }
 
+/*
+ * Theme-aware status colors.
+ * These use the variables defined in index.css,
+ * so they automatically change in dark mode.
+ */
 function getStatusClasses(status) {
   switch (status) {
     case "Delayed":
       return {
         wrapper:
-          "bg-secondary-fixed/40 text-on-secondary-fixed-variant",
-        dot: "bg-secondary",
-      }
+          "bg-secondary-light text-secondary",
+        dot: "bg-warning",
+      };
 
     case "Scheduled":
       return {
         wrapper:
-          "bg-tertiary-fixed/40 text-tertiary",
-        dot: "bg-tertiary",
-      }
+          "bg-info/10 text-info",
+        dot: "bg-info",
+      };
 
     case "En Route":
     case "Final Approach":
       return {
         wrapper:
-          "bg-primary-fixed/50 text-primary",
-        dot: "bg-primary",
-      }
+          "bg-primary-light text-primary",
+        dot: "bg-success",
+      };
 
     case "Landed":
     default:
       return {
         wrapper:
-          "bg-surface-container text-on-surface-variant",
-        dot: "bg-outline",
-      }
+          "bg-neutral-light/10 text-neutral",
+        dot: "bg-neutral-light",
+      };
   }
 }
 
 function getAirlineBadgeClass(code) {
   const normalized = String(code || "")
-    .toUpperCase()
+    .toUpperCase();
 
   if (normalized === "ET") {
-    return "bg-primary text-white"
+    return "bg-primary text-white";
   }
 
   if (normalized === "QR") {
-    return "bg-slate-900 text-white"
+    return "bg-neutral text-surface";
   }
 
   if (normalized === "SV") {
-    return "bg-[#006A4E] text-white"
+    return "bg-[#006A4E] text-white";
   }
 
   if (normalized === "TK") {
-    return "bg-red-700 text-white"
+    return "bg-red-700 text-white";
   }
 
-  return "bg-surface-container-high text-on-surface"
+  return "bg-primary-light text-neutral";
 }
 
 function calculateSummary(flights) {
@@ -559,7 +526,7 @@ function calculateSummary(flights) {
     finalApproach: flights.filter(
       (flight) => flight.status === "Final Approach"
     ).length,
-  }
+  };
 }
 
 function getPaginationPages(
@@ -570,38 +537,42 @@ function getPaginationPages(
     return Array.from(
       { length: totalPages },
       (_, index) => index + 1
-    )
+    );
   }
 
-  const pages = []
+  const pages = [];
 
-  pages.push(1)
+  pages.push(1);
 
   if (currentPage > 4) {
-    pages.push("...")
+    pages.push("...");
   }
 
   const start = Math.max(
     2,
     currentPage - 1
-  )
+  );
 
   const end = Math.min(
     totalPages - 1,
     currentPage + 1
-  )
+  );
 
-  for (let page = start; page <= end; page++) {
-    pages.push(page)
+  for (
+    let page = start;
+    page <= end;
+    page++
+  ) {
+    pages.push(page);
   }
 
   if (currentPage < totalPages - 3) {
-    pages.push("...")
+    pages.push("...");
   }
 
-  pages.push(totalPages)
+  pages.push(totalPages);
 
-  return pages
+  return pages;
 }
 
 function MetricCard({
@@ -611,9 +582,9 @@ function MetricCard({
   footer,
 }) {
   return (
-    <div className="flex flex-col justify-between rounded-xl bg-white p-4 shadow-sm">
+    <div className="flex flex-col justify-between rounded-xl bg-surface p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-outline">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-light">
           {title}
         </span>
 
@@ -624,11 +595,11 @@ function MetricCard({
 
       {footer}
     </div>
-  )
+  );
 }
 
 function StatusBadge({ status }) {
-  const classes = getStatusClasses(status)
+  const classes = getStatusClasses(status);
 
   return (
     <span
@@ -640,7 +611,7 @@ function StatusBadge({ status }) {
 
       {status}
     </span>
-  )
+  );
 }
 
 function LoadingRows() {
@@ -653,13 +624,13 @@ function LoadingRows() {
               key={cellIndex}
               className="px-4 py-4"
             >
-              <div className="h-4 animate-pulse rounded bg-surface-container" />
+              <div className="h-4 animate-pulse rounded bg-primary-light" />
             </td>
           )
         )}
       </tr>
     )
-  )
+  );
 }
 
 function EmptyState({ search }) {
@@ -670,15 +641,15 @@ function EmptyState({ search }) {
         className="px-6 py-16 text-center"
       >
         <div className="mx-auto flex max-w-md flex-col items-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container">
-            <PlaneLanding className="h-6 w-6 text-outline" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-light">
+            <PlaneLanding className="h-6 w-6 text-primary" />
           </div>
 
-          <h3 className="mt-4 text-base font-semibold text-on-surface">
+          <h3 className="mt-4 text-base font-semibold text-neutral">
             No arrivals found
           </h3>
 
-          <p className="mt-1 text-sm text-on-surface-variant">
+          <p className="mt-1 text-sm text-neutral-light">
             {search
               ? "Try changing your search or filters."
               : "The backend did not return any arrivals for this period."}
@@ -686,25 +657,22 @@ function EmptyState({ search }) {
         </div>
       </td>
     </tr>
-  )
+  );
 }
 
 function FlightRow({
   flight,
   onSelect,
 }) {
-  const statusClasses =
-    getStatusClasses(flight.status)
-
   const statusText =
-    getStatusLabel(flight)
+    getStatusLabel(flight);
 
   return (
-    <tr className="group border-b border-surface-variant transition-colors hover:bg-surface-container-low">
+    <tr className="group border-b border-border transition-colors hover:bg-primary-light/50">
       {/* Flight */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[13px] font-bold text-on-surface">
+          <span className="font-mono text-[13px] font-bold text-neutral">
             {safeValue(flight.flightNumber)}
           </span>
         </div>
@@ -724,7 +692,7 @@ function FlightRow({
             ).slice(0, 3)}
           </div>
 
-          <span className="truncate text-sm font-medium text-on-surface">
+          <span className="truncate text-sm font-medium text-neutral">
             {safeValue(flight.airlineName)}
           </span>
         </div>
@@ -733,18 +701,18 @@ function FlightRow({
       {/* Origin */}
       <td className="px-4 py-3.5">
         <div className="flex flex-col">
-          <span className="flex items-center gap-1.5 text-base font-semibold text-on-surface">
+          <span className="flex items-center gap-1.5 text-base font-semibold text-neutral">
             {safeValue(flight.origin)}
 
             {flight.originCode && (
-              <span className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] font-semibold text-on-surface">
+              <span className="rounded bg-primary-light px-1.5 py-0.5 font-mono text-[11px] font-semibold text-neutral">
                 {flight.originCode}
               </span>
             )}
           </span>
 
           {flight.originCountry && (
-            <span className="text-xs text-outline">
+            <span className="text-xs text-neutral-light">
               {flight.originCountry}
             </span>
           )}
@@ -754,12 +722,14 @@ function FlightRow({
       {/* Aircraft */}
       <td className="px-4 py-3.5">
         <div className="flex flex-col font-mono text-[13px]">
-          <span className="font-semibold text-on-surface">
-            {safeValue(flight.aircraftModel)}
+          <span className="font-semibold text-neutral">
+            {safeValue(
+              flight.aircraftModel
+            )}
           </span>
 
           {flight.registration && (
-            <span className="text-xs text-outline">
+            <span className="text-xs text-neutral-light">
               {flight.registration}
             </span>
           )}
@@ -767,7 +737,7 @@ function FlightRow({
       </td>
 
       {/* Scheduled */}
-      <td className="px-4 py-3.5 text-right font-mono text-[13px] text-outline">
+      <td className="px-4 py-3.5 text-right font-mono text-[13px] text-neutral-light">
         {formatTime(
           flight.scheduledArrival
         )}
@@ -778,8 +748,8 @@ function FlightRow({
         <span
           className={
             flight.status === "Delayed"
-              ? "font-bold text-secondary"
-              : "font-bold text-on-surface"
+              ? "font-bold text-warning"
+              : "font-bold text-neutral"
           }
         >
           {formatTime(
@@ -791,8 +761,8 @@ function FlightRow({
         <span
           className={`block text-xs font-semibold ${
             flight.status === "Delayed"
-              ? "text-secondary"
-              : "text-outline"
+              ? "text-warning"
+              : "text-neutral-light"
           }`}
         >
           {statusText}
@@ -802,13 +772,13 @@ function FlightRow({
       {/* Gate */}
       <td className="px-4 py-3.5 text-center">
         <div className="inline-flex items-center gap-1">
-          <span className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[12px] font-medium text-on-surface">
+          <span className="rounded bg-primary-light px-1.5 py-0.5 font-mono text-[12px] font-medium text-neutral">
             {safeValue(
               flight.terminal
             )}
           </span>
 
-          <span className="font-mono text-[13px] font-bold text-on-surface">
+          <span className="font-mono text-[13px] font-bold text-neutral">
             {safeValue(flight.gate)}
           </span>
         </div>
@@ -817,9 +787,9 @@ function FlightRow({
       {/* Baggage */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-1.5">
-          <Luggage className="h-4 w-4 text-outline" />
+          <Luggage className="h-4 w-4 text-neutral-light" />
 
-          <span className="text-xs font-semibold text-on-surface">
+          <span className="text-xs font-semibold text-neutral">
             {safeValue(flight.baggage)}
           </span>
         </div>
@@ -827,7 +797,9 @@ function FlightRow({
 
       {/* Status */}
       <td className="px-4 py-3.5 text-center">
-        <StatusBadge status={flight.status} />
+        <StatusBadge
+          status={flight.status}
+        />
       </td>
 
       {/* Action */}
@@ -835,103 +807,86 @@ function FlightRow({
         <button
           type="button"
           onClick={() => onSelect(flight)}
-          className="rounded-lg bg-surface-container px-3 py-1.5 text-[11px] font-semibold text-on-surface shadow-sm transition-all hover:bg-primary-container hover:text-white"
+          className="rounded-lg bg-primary-light px-3 py-1.5 text-[11px] font-semibold text-neutral shadow-sm transition-all hover:bg-primary hover:text-white"
         >
           View Flight
         </button>
       </td>
     </tr>
-  )
+  );
 }
 
 export default function Arrivals() {
-  const [flights, setFlights] = useState([])
-
-  const [summary, setSummary] = useState(null)
-
-  const [weather, setWeather] = useState(null)
-
+  const [flights, setFlights] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [weather, setWeather] = useState(null);
   const [operations, setOperations] =
-    useState(null)
+    useState(null);
 
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState("");
 
   const [terminal, setTerminal] =
-    useState("all")
+    useState("all");
 
   const [status, setStatus] =
-    useState("all")
+    useState("all");
 
   const [timeRange, setTimeRange] =
-    useState("full-day")
+    useState("full-day");
 
   const [currentPage, setCurrentPage] =
-    useState(1)
+    useState(1);
 
   const [selectedFlight, setSelectedFlight] =
-    useState(null)
+    useState(null);
 
   const [loading, setLoading] =
-    useState(true)
+    useState(true);
 
   const [refreshing, setRefreshing] =
-    useState(false)
+    useState(false);
 
-  const [error, setError] =
-    useState("")
+  const [error, setError] = useState("");
 
   const [lastUpdated, setLastUpdated] =
-    useState(null)
+    useState(null);
 
   const fetchArrivals = useCallback(
     async ({ silent = false } = {}) => {
       if (silent) {
-        setRefreshing(true)
+        setRefreshing(true);
       } else {
-        setLoading(true)
+        setLoading(true);
       }
 
-      setError("")
+      setError("");
 
       try {
-        const params =
-          new URLSearchParams()
-
-        params.set(
-          "airport",
-          AIRPORT_CODE
-        )
-
-        params.set(
-          "timeRange",
-          timeRange
-        )
-
-       const response = await getLiveFlights({
-  arrIata: AIRPORT_CODE,
-  limit: 100,
-})
+        const response = await getLiveFlights({
+          arrIata: AIRPORT_CODE,
+          limit: 100,
+        });
 
         if (!response.ok) {
           throw new Error(
             `Backend request failed with status ${response.status}`
-          )
+          );
         }
 
         const payload =
-          await response.json()
+          await response.json();
 
         const rawFlights =
-          getArrayFromResponse(payload)
+          getArrayFromResponse(payload);
 
         const normalizedFlights =
           rawFlights.map(
             normalizeFlight
-          )
+          );
 
         setFlights(
           normalizedFlights
-        )
+        );
 
         /*
          * Use backend summary when available.
@@ -940,78 +895,75 @@ export default function Arrivals() {
         const backendSummary =
           payload?.summary ||
           payload?.statistics ||
-          null
+          null;
 
         setSummary(
           backendSummary ||
             calculateSummary(
               normalizedFlights
             )
-        )
+        );
 
         setWeather(
           payload?.weather ||
             payload?.metar ||
             null
-        )
+        );
 
         setOperations(
           payload?.operations ||
             payload?.airport_operations ||
             null
-        )
+        );
 
-        setLastUpdated(
-          new Date()
-        )
+        setLastUpdated(new Date());
       } catch (requestError) {
         console.error(
           "Arrivals request failed:",
           requestError
-        )
+        );
 
         setError(
           requestError?.message ||
             "Unable to load arrivals from the backend."
-        )
+        );
 
         /*
-         * Do not inject fake flights when the backend
-         * is unavailable.
+         * Do not inject fake flights when
+         * the backend is unavailable.
          */
-        setFlights([])
-        setSummary(null)
+        setFlights([]);
+        setSummary(null);
       } finally {
-        setLoading(false)
-        setRefreshing(false)
+        setLoading(false);
+        setRefreshing(false);
       }
     },
-    [timeRange]
-  )
+    []
+  );
 
   /*
-   * Load backend arrivals when the page opens
-   * and whenever the selected time range changes.
+   * Load backend arrivals when the page opens.
    */
   useEffect(() => {
-    fetchArrivals()
-  }, [fetchArrivals])
+    fetchArrivals();
+  }, [fetchArrivals]);
 
   /*
    * Reset pagination when filters change.
    */
   useEffect(() => {
-    setCurrentPage(1)
+    setCurrentPage(1);
   }, [
     search,
     terminal,
     status,
     timeRange,
-  ])
+  ]);
 
   const filteredFlights = useMemo(() => {
     const query =
-      search.trim().toLowerCase()
+      search.trim().toLowerCase();
 
     return flights.filter((flight) => {
       const matchesSearch =
@@ -1031,28 +983,28 @@ export default function Arrivals() {
             String(value)
               .toLowerCase()
               .includes(query)
-          )
+          );
 
       const matchesTerminal =
         terminal === "all" ||
-        flight.terminal === terminal
+        flight.terminal === terminal;
 
       const matchesStatus =
         status === "all" ||
-        flight.status === status
+        flight.status === status;
 
       return (
         matchesSearch &&
         matchesTerminal &&
         matchesStatus
-      )
-    })
+      );
+    });
   }, [
     flights,
     search,
     terminal,
     status,
-  ])
+  ]);
 
   const totalPages = Math.max(
     1,
@@ -1060,7 +1012,7 @@ export default function Arrivals() {
       filteredFlights.length /
         ITEMS_PER_PAGE
     )
-  )
+  );
 
   const visibleFlights =
     filteredFlights.slice(
@@ -1068,83 +1020,78 @@ export default function Arrivals() {
         ITEMS_PER_PAGE,
       currentPage *
         ITEMS_PER_PAGE
-    )
+    );
 
   const calculatedSummary =
-    calculateSummary(flights)
+    calculateSummary(flights);
 
-  const totalArrivals =
-    Number(
-      summary?.total ??
-        summary?.total_arrivals ??
-        calculatedSummary.total
-    )
+  const totalArrivals = Number(
+    summary?.total ??
+      summary?.total_arrivals ??
+      calculatedSummary.total
+  );
 
-  const landedCount =
-    Number(
-      summary?.landed ??
-        summary?.arrived ??
-        calculatedSummary.landed
-    )
+  const landedCount = Number(
+    summary?.landed ??
+      summary?.arrived ??
+      calculatedSummary.landed
+  );
 
-  const delayedCount =
-    Number(
-      summary?.delayed ??
-        summary?.delays ??
-        calculatedSummary.delayed
-    )
+  const delayedCount = Number(
+    summary?.delayed ??
+      summary?.delays ??
+      calculatedSummary.delayed
+  );
 
-  const scheduledCount =
-    Number(
-      summary?.scheduled ??
-        calculatedSummary.scheduled
-    )
+  const scheduledCount = Number(
+    summary?.scheduled ??
+      calculatedSummary.scheduled
+  );
 
-  const activeCount =
-    Number(
-      summary?.active ??
-        summary?.en_route ??
-        calculatedSummary.enRoute +
-          calculatedSummary.finalApproach
-    )
+  const activeCount = Number(
+    summary?.active ??
+      summary?.en_route ??
+      calculatedSummary.enRoute +
+        calculatedSummary.finalApproach
+  );
 
   const landedPercent =
     totalArrivals > 0
       ? (landedCount /
           totalArrivals) *
         100
-      : 0
+      : 0;
 
   const delayedPercent =
     totalArrivals > 0
       ? (delayedCount /
           totalArrivals) *
         100
-      : 0
+      : 0;
 
   const scheduledPercent =
     totalArrivals > 0
       ? (scheduledCount /
           totalArrivals) *
         100
-      : 0
+      : 0;
 
   function handleRefresh() {
     fetchArrivals({
       silent: true,
-    })
+    });
   }
 
   function handleResetFilters() {
-    setSearch("")
-    setTerminal("all")
-    setStatus("all")
-    setCurrentPage(1)
+    setSearch("");
+    setTerminal("all");
+    setStatus("all");
+    setCurrentPage(1);
   }
 
   function handleExportCsv() {
     if (!filteredFlights.length) {
-      return
+      return;
     }
 
     const headers = [
@@ -1162,7 +1109,7 @@ export default function Arrivals() {
       "Gate",
       "Baggage",
       "Status",
-    ]
+    ];
 
     const rows =
       filteredFlights.map(
@@ -1182,7 +1129,7 @@ export default function Arrivals() {
           flight.baggage,
           flight.status,
         ]
-      )
+      );
 
     const csv = [
       headers,
@@ -1195,58 +1142,58 @@ export default function Arrivals() {
               value === undefined ||
               value === null
                 ? ""
-                : String(value)
+                : String(value);
 
             return `"${text.replace(
               /"/g,
               '""'
-            )}"`
+            )}"`;
           })
           .join(",")
       )
-      .join("\n")
+      .join("\n");
 
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8;",
-    })
+    });
 
     const url =
-      URL.createObjectURL(blob)
+      URL.createObjectURL(blob);
 
     const link =
-      document.createElement("a")
+      document.createElement("a");
 
-    link.href = url
+    link.href = url;
 
     link.download = `arrivals-${AIRPORT_CODE}-${new Date()
       .toISOString()
-      .slice(0, 10)}.csv`
+      .slice(0, 10)}.csv`;
 
-    document.body.appendChild(link)
+    document.body.appendChild(link);
 
-    link.click()
+    link.click();
 
-    link.remove()
+    link.remove();
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   function handlePrint() {
-    window.print()
+    window.print();
   }
 
   const paginationPages =
     getPaginationPages(
       currentPage,
       totalPages
-    )
+    );
 
   const weatherTemperature =
     firstValue(
       weather?.temperature,
       weather?.temp,
       weather?.temperature_c
-    )
+    );
 
   const weatherCondition =
     firstValue(
@@ -1254,76 +1201,73 @@ export default function Arrivals() {
       weather?.visibility,
       weather?.flight_category,
       weather?.category
-    )
+    );
 
   const windDirection =
     firstValue(
       weather?.wind_direction,
       weather?.wind_dir,
       weather?.wind?.direction
-    )
+    );
 
   const windSpeed =
     firstValue(
       weather?.wind_speed,
       weather?.wind_speed_kt,
       weather?.wind?.speed
-    )
+    );
 
   const qnh =
     firstValue(
       weather?.qnh,
       weather?.pressure,
       weather?.altimeter
-    )
+    );
 
   const runway =
     firstValue(
       operations?.active_runway,
       operations?.runway,
       weather?.runway
-    )
+    );
 
   const arrivalConfiguration =
     firstValue(
       operations?.arrival_configuration,
       operations?.approach,
       operations?.approach_configuration
-    )
+    );
 
   const holdingTime =
     firstValue(
       operations?.holding_time,
       operations?.average_holding_minutes,
       operations?.avg_holding_minutes
-    )
+    );
 
   const gateOccupancy =
     firstValue(
       operations?.gate_occupancy,
       operations?.gateOccupancy
-    )
+    );
 
   const terminalCapacity =
     firstValue(
       operations?.terminal_capacity,
       operations?.capacity
-    )
+    );
 
   const operationsMessage =
     firstValue(
       operations?.baggage_message,
       operations?.message,
       operations?.alert
-    )
+    );
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB] text-on-surface">
-      {/* ---------------------------------------------------------------- */}
-      {/* Airport header                                                    */}
-      {/* ---------------------------------------------------------------- */}
-
-      <section className="relative overflow-hidden rounded-xl bg-white p-5 shadow-sm">
+    <div className="min-h-screen bg-background text-neutral">
+      {/* Airport header */}
+      <section className="relative overflow-hidden rounded-xl bg-surface p-5 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
@@ -1332,32 +1276,30 @@ export default function Arrivals() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[22px] font-semibold tracking-tight text-on-surface">
+                <h1 className="text-[22px] font-semibold tracking-tight text-neutral">
                   {AIRPORT_NAME}
                 </h1>
 
-                <span className="rounded-lg bg-surface-container-high px-2 py-0.5 font-mono text-xs font-semibold tracking-wider text-on-surface">
+                <span className="rounded-lg bg-primary-light px-2 py-0.5 font-mono text-xs font-semibold tracking-wider text-neutral">
                   {AIRPORT_CODE} /{" "}
                   {AIRPORT_ICAO}
                 </span>
 
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-low px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-
                   LIVE INBOUND RADAR ACTIVE
                 </span>
               </div>
 
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
-                <MapPin className="h-4 w-4 text-outline" />
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-neutral-light">
+                <MapPin className="h-4 w-4 text-neutral-light" />
 
                 {AIRPORT_LOCATION}
 
                 {runway && (
                   <>
                     <span>·</span>
-                    Active Runway:{" "}
-                    {runway}
+                    Active Runway: {runway}
                   </>
                 )}
               </p>
@@ -1371,7 +1313,7 @@ export default function Arrivals() {
               disabled={
                 refreshing || loading
               }
-              className="flex items-center gap-2 rounded-lg bg-surface-container px-3.5 py-2 text-sm font-medium text-on-surface shadow-sm transition hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-lg bg-primary-light px-3.5 py-2 text-sm font-medium text-neutral shadow-sm transition hover:bg-primary-light/70 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
                 className={`h-[18px] w-[18px] ${
@@ -1388,23 +1330,19 @@ export default function Arrivals() {
 
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-container"
+              className="flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-dark"
             >
               <Satellite className="h-[18px] w-[18px]" />
-
               Approach Vector Map
             </button>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Error                                                             */}
-      {/* ---------------------------------------------------------------- */}
-
+      {/* Error */}
       {error && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger/10">
             <Radar className="h-4 w-4" />
           </div>
 
@@ -1422,7 +1360,7 @@ export default function Arrivals() {
               onClick={() =>
                 fetchArrivals()
               }
-              className="mt-3 rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white"
+              className="mt-3 rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
             >
               Try Again
             </button>
@@ -1430,10 +1368,7 @@ export default function Arrivals() {
         </div>
       )}
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Metrics                                                           */}
-      {/* ---------------------------------------------------------------- */}
-
+      {/* Metrics */}
       <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Inbound volume */}
         <MetricCard
@@ -1442,7 +1377,7 @@ export default function Arrivals() {
             <CloudDownload className="h-[18px] w-[18px] text-primary" />
           }
           footer={
-            <div className="mt-2 flex items-center justify-between font-mono text-[12px] text-on-surface-variant">
+            <div className="mt-2 flex items-center justify-between font-mono text-[12px] text-neutral-light">
               <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-primary" />
                 {landedCount} Landed
@@ -1454,14 +1389,14 @@ export default function Arrivals() {
               </span>
 
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-tertiary" />
+                <span className="h-2 w-2 rounded-full bg-info" />
                 {scheduledCount} Scheduled
               </span>
             </div>
           }
         >
           <div className="my-2 flex items-baseline gap-2">
-            <span className="text-[40px] font-bold tracking-tight text-on-surface">
+            <span className="text-[40px] font-bold tracking-tight text-neutral">
               {loading
                 ? "—"
                 : totalArrivals}
@@ -1472,7 +1407,7 @@ export default function Arrivals() {
             </span>
           </div>
 
-          <div className="flex h-2 w-full overflow-hidden rounded-full bg-surface-container">
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-primary-light">
             <div
               className="h-full bg-primary"
               style={{
@@ -1488,7 +1423,7 @@ export default function Arrivals() {
             />
 
             <div
-              className="h-full bg-tertiary"
+              className="h-full bg-info"
               style={{
                 width: `${scheduledPercent}%`,
               }}
@@ -1500,11 +1435,11 @@ export default function Arrivals() {
         <MetricCard
           title="METAR & Conditions"
           icon={
-            <AirVent className="h-[18px] w-[18px] text-tertiary" />
+            <AirVent className="h-[18px] w-[18px] text-info" />
           }
           footer={
-            <div className="mt-2 flex items-center justify-between rounded-lg bg-surface-container-low px-2 py-1.5">
-              <span className="text-[11px] font-medium text-on-surface">
+            <div className="mt-2 flex items-center justify-between rounded-lg bg-primary-light px-2 py-1.5">
+              <span className="text-[11px] font-medium text-neutral">
                 Arrival Configuration
               </span>
 
@@ -1517,21 +1452,21 @@ export default function Arrivals() {
           }
         >
           <div className="my-1 flex items-baseline gap-2">
-            <span className="text-[30px] font-semibold text-on-surface">
+            <span className="text-[30px] font-semibold text-neutral">
               {weatherTemperature !==
               undefined
                 ? `${weatherTemperature}°C`
                 : "—"}
             </span>
 
-            <span className="text-xs font-semibold text-on-surface-variant">
+            <span className="text-xs font-semibold text-neutral-light">
               {safeValue(
                 weatherCondition
               )}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-on-surface-variant">
+          <div className="flex items-center justify-between text-xs text-neutral-light">
             <span className="flex items-center gap-1">
               <Wind className="h-3.5 w-3.5" />
 
@@ -1542,7 +1477,8 @@ export default function Arrivals() {
               ° @{" "}
               {safeValue(
                 windSpeed
-              )} kts
+              )}{" "}
+              kts
             </span>
 
             <span className="font-mono font-semibold text-primary">
@@ -1558,8 +1494,8 @@ export default function Arrivals() {
             <Timer className="h-[18px] w-[18px] text-secondary" />
           }
           footer={
-            <p className="mt-2 flex items-center gap-1 text-xs text-on-surface-variant">
-              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+            <p className="mt-2 flex items-center gap-1 text-xs text-neutral-light">
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
 
               {safeValue(
                 operations?.holding_message,
@@ -1569,20 +1505,20 @@ export default function Arrivals() {
           }
         >
           <div className="my-1 flex items-baseline gap-2">
-            <span className="text-[40px] font-bold tracking-tight text-on-surface">
+            <span className="text-[40px] font-bold tracking-tight text-neutral">
               {holdingTime !==
               undefined
                 ? holdingTime
                 : "—"}
             </span>
 
-            <span className="text-base text-on-surface-variant">
+            <span className="text-base text-neutral-light">
               min avg
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-container">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary-light">
               <div
                 className="h-full rounded-full bg-primary"
                 style={{
@@ -1613,15 +1549,15 @@ export default function Arrivals() {
         <MetricCard
           title="Terminal Capacity"
           icon={
-            <Gauge className="h-[18px] w-[18px] text-outline" />
+            <Gauge className="h-[18px] w-[18px] text-neutral-light" />
           }
           footer={
-            <div className="flex justify-between text-[11px] text-on-surface-variant">
+            <div className="flex justify-between text-[11px] text-neutral-light">
               <span>
                 Active arrivals
               </span>
 
-              <span className="font-mono font-semibold text-on-surface">
+              <span className="font-mono font-semibold text-neutral">
                 {activeCount}
               </span>
             </div>
@@ -1629,14 +1565,14 @@ export default function Arrivals() {
         >
           <div className="my-1 flex items-center justify-between">
             <div>
-              <span className="text-[30px] font-semibold text-on-surface">
+              <span className="text-[30px] font-semibold text-neutral">
                 {gateOccupancy !==
                 undefined
                   ? `${gateOccupancy}%`
                   : "—"}
               </span>
 
-              <span className="block text-xs text-on-surface-variant">
+              <span className="block text-xs text-neutral-light">
                 Gate Occupancy
               </span>
             </div>
@@ -1647,7 +1583,7 @@ export default function Arrivals() {
                 viewBox="0 0 36 36"
               >
                 <path
-                  className="stroke-surface-container"
+                  className="stroke-primary-light"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
                   strokeWidth="3.5"
@@ -1667,12 +1603,12 @@ export default function Arrivals() {
             </div>
           </div>
 
-          <div className="flex justify-between text-[11px] text-on-surface-variant">
+          <div className="flex justify-between text-[11px] text-neutral-light">
             <span>
               Capacity
             </span>
 
-            <span className="font-mono font-semibold">
+            <span className="font-mono font-semibold text-neutral">
               {safeValue(
                 terminalCapacity
               )}
@@ -1681,16 +1617,13 @@ export default function Arrivals() {
         </MetricCard>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Filters                                                           */}
-      {/* ---------------------------------------------------------------- */}
-
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
+      {/* Filters */}
+      <section className="mt-4 rounded-xl bg-surface p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
             {/* Search */}
             <div className="relative flex-1 lg:max-w-lg">
-              <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-outline" />
+              <Search className="absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-neutral-light" />
 
               <input
                 type="text"
@@ -1701,7 +1634,7 @@ export default function Arrivals() {
                   )
                 }
                 placeholder="Filter by flight number, origin, or airline..."
-                className="h-10 w-full rounded-lg bg-surface-container-low pl-9 pr-9 text-sm text-on-surface outline-none transition focus:bg-surface-container"
+                className="h-10 w-full rounded-lg border border-border bg-primary-light pl-9 pr-9 text-sm text-neutral outline-none transition placeholder:text-neutral-muted focus:border-primary focus:bg-surface"
               />
 
               {search && (
@@ -1710,7 +1643,7 @@ export default function Arrivals() {
                   onClick={() =>
                     setSearch("")
                   }
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-outline hover:bg-surface-container"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-neutral-light hover:bg-primary-light hover:text-neutral"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1718,7 +1651,7 @@ export default function Arrivals() {
             </div>
 
             {/* Terminal */}
-            <div className="flex items-center overflow-hidden rounded-lg bg-surface-container p-1">
+            <div className="flex items-center overflow-hidden rounded-lg bg-primary-light p-1">
               {TERMINALS.map(
                 (item) => (
                   <button
@@ -1732,8 +1665,8 @@ export default function Arrivals() {
                     className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all ${
                       terminal ===
                       item.value
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface"
+                        ? "bg-surface text-neutral shadow-sm"
+                        : "text-neutral-light hover:text-neutral"
                     }`}
                   >
                     {item.label}
@@ -1743,7 +1676,7 @@ export default function Arrivals() {
             </div>
 
             {/* Status */}
-            <div className="flex items-center overflow-x-auto rounded-lg bg-surface-container p-1">
+            <div className="flex items-center overflow-x-auto rounded-lg bg-primary-light p-1">
               {STATUSES.map(
                 (item) => (
                   <button
@@ -1757,8 +1690,8 @@ export default function Arrivals() {
                     className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all ${
                       status ===
                       item.value
-                        ? "bg-white text-on-surface shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface"
+                        ? "bg-surface text-neutral shadow-sm"
+                        : "text-neutral-light hover:text-neutral"
                     }`}
                   >
                     {item.label}
@@ -1777,7 +1710,7 @@ export default function Arrivals() {
                   event.target.value
                 )
               }
-              className="h-10 rounded-lg border border-surface-variant bg-white px-3 text-xs font-medium text-on-surface outline-none"
+              className="h-10 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-neutral outline-none focus:border-primary"
             >
               {TIME_RANGES.map(
                 (item) => (
@@ -1796,7 +1729,7 @@ export default function Arrivals() {
               onClick={
                 handleResetFilters
               }
-              className="h-10 rounded-lg bg-surface-container px-3 text-xs font-semibold text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+              className="h-10 rounded-lg bg-primary-light px-3 text-xs font-semibold text-neutral-light transition hover:bg-primary-light/70 hover:text-neutral"
             >
               Reset
             </button>
@@ -1804,28 +1737,25 @@ export default function Arrivals() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Arrivals table                                                    */}
-      {/* ---------------------------------------------------------------- */}
-
-      <section className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-surface-variant px-4 py-3">
+      {/* Arrivals table */}
+      <section className="mt-4 overflow-hidden rounded-xl bg-surface shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <Radar className="h-4 w-4 text-primary" />
 
             <div>
-              <h2 className="text-sm font-semibold text-on-surface">
+              <h2 className="text-sm font-semibold text-neutral">
                 Arrival Flight Matrix
               </h2>
 
-              <p className="text-xs text-outline">
+              <p className="text-xs text-neutral-light">
                 Live inbound flights for{" "}
                 {AIRPORT_CODE}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-outline">
+          <div className="flex items-center gap-2 text-xs text-neutral-light">
             <span className="hidden sm:inline">
               {lastUpdated
                 ? `Updated ${formatDateTime(
@@ -1834,9 +1764,8 @@ export default function Arrivals() {
                 : "Waiting for backend"}
             </span>
 
-            <span className="flex items-center gap-1.5 rounded-full bg-surface-container-low px-2 py-1 text-[10px] font-semibold text-primary">
+            <span className="flex items-center gap-1.5 rounded-full bg-primary-light px-2 py-1 text-[10px] font-semibold text-primary">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-
               LIVE
             </span>
           </div>
@@ -1845,44 +1774,44 @@ export default function Arrivals() {
         <div className="overflow-x-auto">
           <table className="min-w-[1250px] w-full border-collapse">
             <thead>
-              <tr className="bg-surface-container-low text-left">
-                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-outline">
+              <tr className="bg-primary-light text-left">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Flight
                 </th>
 
-                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Airline
                 </th>
 
-                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Origin
                 </th>
 
-                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Aircraft
                 </th>
 
-                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Scheduled
                 </th>
 
-                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Estimated / Actual
                 </th>
 
-                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Gate
                 </th>
 
-                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Baggage
                 </th>
 
-                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Status
                 </th>
 
-                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-outline">
+                <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
                   Action
                 </th>
               </tr>
@@ -1918,20 +1847,17 @@ export default function Arrivals() {
           </table>
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Operations ribbon                                                 */}
-        {/* ---------------------------------------------------------------- */}
-
-        <div className="flex flex-col items-start justify-between gap-3 bg-surface-container-low px-4 py-3 md:flex-row md:items-center">
+        {/* Operations ribbon */}
+        <div className="flex flex-col items-start justify-between gap-3 bg-primary-light px-4 py-3 md:flex-row md:items-center">
           <div className="flex items-start gap-2">
             <Bell className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
 
             <div className="flex flex-col">
-              <span className="text-xs font-semibold text-on-surface">
+              <span className="text-xs font-semibold text-neutral">
                 Baggage Hall Ops:
               </span>
 
-              <span className="text-xs text-on-surface-variant">
+              <span className="text-xs text-neutral-light">
                 {safeValue(
                   operationsMessage,
                   "Waiting for operational data from backend."
@@ -1941,7 +1867,7 @@ export default function Arrivals() {
           </div>
 
           <div className="flex items-center gap-4 self-end md:self-auto">
-            <span className="font-mono text-[11px] text-outline">
+            <span className="font-mono text-[11px] text-neutral-light">
               Telemetry:{" "}
               {safeValue(
                 operations?.telemetry,
@@ -1954,27 +1880,23 @@ export default function Arrivals() {
               className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
             >
               Ground Movement Radar
-
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Pagination                                                        */}
-        {/* ---------------------------------------------------------------- */}
-
-        <div className="flex flex-col items-center justify-between gap-4 bg-white p-4 sm:flex-row">
+        {/* Pagination */}
+        <div className="flex flex-col items-center justify-between gap-4 bg-surface p-4 sm:flex-row">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-outline">
+            <span className="text-neutral-light">
               Showing
             </span>
 
-            <span className="font-semibold text-on-surface">
+            <span className="font-semibold text-neutral">
               {visibleFlights.length}
             </span>
 
-            <span className="text-outline">
+            <span className="text-neutral-light">
               of{" "}
               {filteredFlights.length}{" "}
               filtered arrivals
@@ -1982,7 +1904,7 @@ export default function Arrivals() {
 
             {filteredFlights.length !==
               flights.length && (
-              <span className="text-outline">
+              <span className="text-neutral-light">
                 ({flights.length} total)
               </span>
             )}
@@ -1990,7 +1912,7 @@ export default function Arrivals() {
 
           <div className="flex items-center gap-3">
             {/* Export */}
-            <div className="flex items-center gap-1 border-r border-surface-variant pr-3">
+            <div className="flex items-center gap-1 border-r border-border pr-3">
               <button
                 type="button"
                 onClick={
@@ -2000,7 +1922,7 @@ export default function Arrivals() {
                   !filteredFlights.length
                 }
                 title="Export CSV Data"
-                className="rounded-lg p-2 text-outline transition hover:bg-surface-container hover:text-on-surface disabled:opacity-40"
+                className="rounded-lg p-2 text-neutral-light transition hover:bg-primary-light hover:text-neutral disabled:opacity-40"
               >
                 <Download className="h-[18px] w-[18px]" />
               </button>
@@ -2009,7 +1931,7 @@ export default function Arrivals() {
                 type="button"
                 onClick={handlePrint}
                 title="Print Flight Board"
-                className="rounded-lg p-2 text-outline transition hover:bg-surface-container hover:text-on-surface"
+                className="rounded-lg p-2 text-neutral-light transition hover:bg-primary-light hover:text-neutral"
               >
                 <Printer className="h-[18px] w-[18px]" />
               </button>
@@ -2031,7 +1953,7 @@ export default function Arrivals() {
                       )
                   )
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-outline transition hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light text-neutral-light transition hover:text-neutral disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeft className="h-[18px] w-[18px]" />
               </button>
@@ -2041,7 +1963,7 @@ export default function Arrivals() {
                   page === "..." ? (
                     <span
                       key={`dots-${index}`}
-                      className="px-1 text-outline"
+                      className="px-1 text-neutral-light"
                     >
                       ...
                     </span>
@@ -2058,7 +1980,7 @@ export default function Arrivals() {
                         currentPage ===
                         page
                           ? "bg-primary text-white"
-                          : "bg-surface-container text-on-surface hover:bg-surface-container-high"
+                          : "bg-primary-light text-neutral hover:bg-primary-light/70"
                       }`}
                     >
                       {page}
@@ -2081,7 +2003,7 @@ export default function Arrivals() {
                       )
                   )
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-on-surface transition hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light text-neutral transition hover:bg-primary-light/70 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronRight className="h-[18px] w-[18px]" />
               </button>
@@ -2090,29 +2012,26 @@ export default function Arrivals() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Flight details modal                                              */}
-      {/* ---------------------------------------------------------------- */}
-
+      {/* Flight details modal */}
       {selectedFlight && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
           onMouseDown={() =>
             setSelectedFlight(null)
           }
         >
           <div
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-surface shadow-2xl"
             onMouseDown={(event) =>
               event.stopPropagation()
             }
           >
-            <div className="flex items-center justify-between border-b border-surface-variant p-5">
+            <div className="flex items-center justify-between border-b border-border p-5">
               <div>
                 <div className="flex items-center gap-2">
                   <PlaneLanding className="h-5 w-5 text-primary" />
 
-                  <h2 className="text-lg font-semibold text-on-surface">
+                  <h2 className="text-lg font-semibold text-neutral">
                     Flight{" "}
                     {safeValue(
                       selectedFlight.flightNumber
@@ -2120,7 +2039,7 @@ export default function Arrivals() {
                   </h2>
                 </div>
 
-                <p className="mt-1 text-sm text-on-surface-variant">
+                <p className="mt-1 text-sm text-neutral-light">
                   {safeValue(
                     selectedFlight.airlineName
                   )}
@@ -2134,7 +2053,7 @@ export default function Arrivals() {
                     null
                   )
                 }
-                className="rounded-lg p-2 text-outline hover:bg-surface-container"
+                className="rounded-lg p-2 text-neutral-light hover:bg-primary-light hover:text-neutral"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -2220,10 +2139,9 @@ export default function Arrivals() {
               />
             </div>
 
-            <div className="border-t border-surface-variant bg-surface-container-low p-5">
-              <p className="flex items-center gap-2 text-xs font-semibold text-on-surface">
+            <div className="border-t border-border bg-primary-light p-5">
+              <p className="flex items-center gap-2 text-xs font-semibold text-neutral">
                 <FileText className="h-4 w-4 text-primary" />
-
                 Backend Flight Data
               </p>
 
@@ -2239,7 +2157,7 @@ export default function Arrivals() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function DetailItem({
@@ -2247,14 +2165,14 @@ function DetailItem({
   value,
 }) {
   return (
-    <div className="rounded-xl bg-surface-container-low p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-outline">
+    <div className="rounded-xl bg-primary-light p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-light">
         {label}
       </p>
 
-      <div className="mt-1 text-sm font-semibold text-on-surface">
+      <div className="mt-1 text-sm font-semibold text-neutral">
         {value}
       </div>
     </div>
-  )
+  );
 }

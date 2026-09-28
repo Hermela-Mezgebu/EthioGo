@@ -3,6 +3,7 @@ import { useState } from "react"
 
 import Sidebar from "./Sidebar"
 import Header from "./Header"
+import ThemeToggle from "../ui/ThemeToggle"
 
 function DashboardLayout({
   children,
@@ -34,6 +35,7 @@ function DashboardLayout({
         onClose={() => setMobileSidebarOpen(false)}
         onNavigate={handleNavigation}
       />
+      <ThemeToggle />
 
       {/* Header */}
       <Header

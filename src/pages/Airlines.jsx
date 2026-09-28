@@ -180,7 +180,10 @@ function getInitials(name) {
     .filter(Boolean)
     .slice(0, 2);
 
-  return words.map((word) => word[0]).join("").toUpperCase();
+  return words
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
 }
 
 function getDisplayCode(airline) {
@@ -260,27 +263,27 @@ function StatCard({
   label,
   value,
   description,
-  iconClass = "text-[#005932]",
+  iconClass = "text-primary",
 }) {
   return (
-    <div className="bg-white rounded-xl border border-[#e2e8e4] shadow-sm p-5 relative overflow-hidden">
-      <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#005932]/5 pointer-events-none" />
+    <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <div className="pointer-events-none absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-primary/5" />
 
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6f7a70]">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-light">
           {label}
         </span>
 
-        <Icon className={`w-5 h-5 ${iconClass}`} />
+        <Icon className={`h-5 w-5 ${iconClass}`} />
       </div>
 
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl leading-[48px] font-bold text-[#131e19]">
+        <span className="text-4xl font-bold leading-[48px] text-neutral">
           {value}
         </span>
       </div>
 
-      <div className="mt-2 text-xs text-[#3f4941]">
+      <div className="mt-2 text-xs text-neutral-light">
         {description}
       </div>
     </div>
@@ -289,7 +292,7 @@ function StatCard({
 
 function AirlineAvatar({ airline }) {
   return (
-    <div className="w-10 h-10 rounded-lg bg-[#005932] text-white flex items-center justify-center font-bold text-xs shrink-0">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-dark text-xs font-bold text-white">
       {getInitials(airline.name)}
     </div>
   );
@@ -297,44 +300,44 @@ function AirlineAvatar({ airline }) {
 
 function LoadingCard() {
   return (
-    <div className="bg-white rounded-xl border border-[#e2e8e4] shadow-sm p-5 animate-pulse">
+    <div className="animate-pulse rounded-xl border border-border bg-surface p-5 shadow-sm">
       <div className="flex justify-between">
-        <div className="h-7 w-20 rounded bg-[#e4f1e9]" />
-        <div className="h-7 w-24 rounded-full bg-[#e4f1e9]" />
+        <div className="h-7 w-20 rounded bg-primary-light" />
+        <div className="h-7 w-24 rounded-full bg-primary-light" />
       </div>
 
-      <div className="mt-5 h-6 w-48 rounded bg-[#e4f1e9]" />
-      <div className="mt-2 h-4 w-32 rounded bg-[#e4f1e9]" />
+      <div className="mt-5 h-6 w-48 rounded bg-primary-light" />
+      <div className="mt-2 h-4 w-32 rounded bg-primary-light" />
 
-      <div className="grid grid-cols-2 gap-2 mt-5">
-        <div className="h-20 rounded-lg bg-[#eaf7ee]" />
-        <div className="h-20 rounded-lg bg-[#eaf7ee]" />
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <div className="h-20 rounded-lg bg-primary-light" />
+        <div className="h-20 rounded-lg bg-primary-light" />
       </div>
 
-      <div className="mt-5 h-10 rounded-xl bg-[#e4f1e9]" />
+      <div className="mt-5 h-10 rounded-xl bg-primary-light" />
     </div>
   );
 }
 
 function EmptyState({ onReset }) {
   return (
-    <div className="col-span-full bg-white rounded-xl border border-[#e2e8e4] p-12 text-center">
-      <Search className="w-10 h-10 mx-auto text-[#6f7a70]" />
+    <div className="col-span-full rounded-xl border border-border bg-surface p-12 text-center">
+      <Search className="mx-auto h-10 w-10 text-neutral-light" />
 
-      <h3 className="mt-4 text-lg font-semibold text-[#131e19]">
+      <h3 className="mt-4 text-lg font-semibold text-neutral">
         No airlines found
       </h3>
 
-      <p className="mt-1 text-sm text-[#3f4941]">
+      <p className="mt-1 text-sm text-neutral-light">
         Try changing your search or clearing the current filters.
       </p>
 
       <button
         type="button"
         onClick={onReset}
-        className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#005932] text-white text-sm font-semibold hover:bg-[#087443]"
+        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary-dark px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
       >
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
         Clear filters
       </button>
     </div>
@@ -343,23 +346,23 @@ function EmptyState({ onReset }) {
 
 function ErrorState({ message, onRetry }) {
   return (
-    <div className="bg-white border border-[#f1b8b3] rounded-xl p-8 text-center">
-      <AlertCircle className="w-10 h-10 mx-auto text-[#ba1a1a]" />
+    <div className="rounded-xl border border-danger/30 bg-surface p-8 text-center">
+      <AlertCircle className="mx-auto h-10 w-10 text-danger" />
 
-      <h3 className="mt-4 text-lg font-semibold text-[#131e19]">
+      <h3 className="mt-4 text-lg font-semibold text-neutral">
         Unable to load airline data
       </h3>
 
-      <p className="mt-2 max-w-xl mx-auto text-sm text-[#3f4941]">
+      <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-light">
         {message}
       </p>
 
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#005932] text-white text-sm font-semibold hover:bg-[#087443]"
+        className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary-dark px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
       >
-        <RefreshCw className="w-4 h-4" />
+        <RefreshCw className="h-4 w-4" />
         Try again
       </button>
     </div>
@@ -373,123 +376,123 @@ function AirlineCard({
   onOpen,
 }) {
   return (
-    <div className="bg-white rounded-xl border border-[#e2e8e4] shadow-sm p-5 flex flex-col justify-between transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
             <AirlineAvatar airline={airline} />
 
-            <span className="bg-[#28332d] text-white font-mono text-xs font-bold px-2 py-1 rounded whitespace-nowrap">
+            <span className="whitespace-nowrap rounded bg-neutral/90 px-2 py-1 font-mono text-xs font-bold text-white">
               {getDisplayCode(airline)}
             </span>
           </div>
 
-          <span className="bg-[#eaf7ee] text-[#005932] text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
+          <span className="whitespace-nowrap rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-semibold text-primary-dark">
             {getDataBadge(airline)}
           </span>
         </div>
 
         <div>
-          <h3 className="text-[18px] leading-6 font-semibold text-[#131e19] truncate">
+          <h3 className="truncate text-[18px] font-semibold leading-6 text-neutral">
             {airline.name}
           </h3>
 
-          <p className="mt-1 text-xs text-[#6f7a70]">
+          <p className="mt-1 text-xs text-neutral-light">
             {getCountryLabel(airline.country)}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 bg-[#eaf7ee] p-2 rounded-lg">
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-primary-light p-2">
           <div>
-            <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
               IATA
             </span>
 
-            <p className="mt-1 font-mono text-xs font-bold text-[#131e19]">
+            <p className="mt-1 font-mono text-xs font-bold text-neutral">
               {airline.iata || "—"}
             </p>
           </div>
 
           <div>
-            <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
               ICAO
             </span>
 
-            <p className="mt-1 font-mono text-xs font-bold text-[#131e19]">
+            <p className="mt-1 font-mono text-xs font-bold text-neutral">
               {airline.icao || "—"}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-[#f7f9fb] rounded-lg p-3">
+          <div className="rounded-lg bg-background p-3">
             <div className="flex items-center gap-1.5">
-              <Plane className="w-4 h-4 text-[#005932]" />
+              <Plane className="h-4 w-4 text-primary-dark" />
 
-              <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
                 ADD Routes
               </span>
             </div>
 
-            <p className="mt-1 text-lg font-bold text-[#131e19]">
+            <p className="mt-1 text-lg font-bold text-neutral">
               {routeCount}
             </p>
 
-            <span className="text-[11px] text-[#6f7a70]">
+            <span className="text-[11px] text-neutral-light">
               API route records
             </span>
           </div>
 
-          <div className="bg-[#f7f9fb] rounded-lg p-3">
+          <div className="rounded-lg bg-background p-3">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#005932]" />
+              <CheckCircle2 className="h-4 w-4 text-success" />
 
-              <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
                 Live Flights
               </span>
             </div>
 
-            <p className="mt-1 text-lg font-bold text-[#005932]">
+            <p className="mt-1 text-lg font-bold text-success">
               {liveCount}
             </p>
 
-            <span className="text-[11px] text-[#6f7a70]">
+            <span className="text-[11px] text-neutral-light">
               Current API response
             </span>
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
             Callsign
           </span>
 
-          <p className="font-mono text-xs font-bold text-[#131e19]">
+          <p className="font-mono text-xs font-bold text-neutral">
             {airline.callsign || "Not provided by API"}
           </p>
         </div>
 
         {airline.hub && (
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
               Hub
             </span>
 
-            <p className="text-sm font-medium text-[#131e19]">
+            <p className="text-sm font-medium text-neutral">
               {airline.hub}
             </p>
           </div>
         )}
       </div>
 
-      <div className="pt-5 mt-4 border-t border-[#e2e8e4]">
+      <div className="mt-4 border-t border-border pt-5">
         <button
           type="button"
           onClick={() => onOpen(airline)}
-          className="w-full py-2.5 px-3 bg-[#e4f1e9] hover:bg-[#deebe3] text-[#131e19] rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-light px-3 py-2.5 text-sm font-semibold text-neutral transition-all hover:bg-primary hover:text-white"
         >
           View airline details
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -505,9 +508,9 @@ function AirlineDetailsModal({
   if (!airline) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-6 py-5 bg-[#0b1713] text-white flex items-center justify-between">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-surface shadow-2xl">
+        <div className="flex items-center justify-between bg-neutral p-6 text-white">
           <div className="flex items-center gap-3">
             <AirlineAvatar airline={airline} />
 
@@ -516,7 +519,7 @@ function AirlineDetailsModal({
                 {airline.name}
               </h2>
 
-              <p className="text-xs text-[#aab8b0]">
+              <p className="text-xs text-neutral-muted">
                 {getDisplayCode(airline)}
               </p>
             </div>
@@ -525,14 +528,14 @@ function AirlineDetailsModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-white/10"
+            className="rounded-xl p-2 hover:bg-white/10"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DetailItem
               label="Airline"
               value={airline.name}
@@ -577,16 +580,16 @@ function AirlineDetailsModal({
             />
           </div>
 
-          <div className="mt-6 p-4 rounded-xl bg-[#eaf7ee] border border-[#becabe]">
+          <div className="mt-6 rounded-xl border border-border bg-primary-light p-4">
             <div className="flex gap-3">
-              <CloudOff className="w-5 h-5 text-[#6f7a70] shrink-0" />
+              <CloudOff className="h-5 w-5 shrink-0 text-neutral-light" />
 
               <div>
-                <p className="text-sm font-semibold text-[#131e19]">
+                <p className="text-sm font-semibold text-neutral">
                   Data availability
                 </p>
 
-                <p className="mt-1 text-xs leading-5 text-[#3f4941]">
+                <p className="mt-1 text-xs leading-5 text-neutral-light">
                   Alliance membership, punctuality, fleet size,
                   aircraft age, fleet composition and telemetry
                   are not assumed when they are not supplied by
@@ -597,11 +600,11 @@ function AirlineDetailsModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-[#f7f9fb] border-t border-[#e2e8e4] flex justify-end">
+        <div className="flex justify-end border-t border-border bg-background px-6 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#005932] text-white text-sm font-semibold hover:bg-[#087443]"
+            className="rounded-xl bg-primary-dark px-4 py-2 text-sm font-semibold text-white hover:bg-primary"
           >
             Close
           </button>
@@ -617,13 +620,13 @@ function DetailItem({
   mono = false,
 }) {
   return (
-    <div className="bg-[#f7f9fb] rounded-xl p-4">
-      <span className="text-[10px] uppercase tracking-wide font-semibold text-[#6f7a70]">
+    <div className="rounded-xl bg-background p-4">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
         {label}
       </span>
 
       <p
-        className={`mt-1 text-sm font-semibold text-[#131e19] ${
+        className={`mt-1 text-sm font-semibold text-neutral ${
           mono ? "font-mono" : ""
         }`}
       >
@@ -651,7 +654,8 @@ export default function Airlines() {
 
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const [selectedAirline, setSelectedAirline] = useState(null);
+  const [selectedAirline, setSelectedAirline] =
+    useState(null);
 
   const [page, setPage] = useState(1);
 
@@ -665,130 +669,144 @@ export default function Airlines() {
     Region filtering below uses the airline's actual country field.
   */
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      setError("");
-
-      /*
-        1. Airline directory
-      */
-      const airlineResponse = await getAirlines({
-        limit: 100,
-      });
-
-      const airlineData = Array.isArray(airlineResponse?.data)
-        ? airlineResponse.data
-        : [];
-
-      /*
-        2. Routes involving ADD
-
-        We use both directions because an airline may operate:
-        ADD -> destination
-        destination -> ADD
-      */
-
-      let routeData = [];
-
+  const loadData = useCallback(
+    async (isRefresh = false) => {
       try {
-        const [departureRoutes, arrivalRoutes] =
-          await Promise.all([
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        setError("");
+
+        /*
+          1. Airline directory
+        */
+
+        const airlineResponse = await getAirlines({
+          limit: 100,
+        });
+
+        const airlineData = Array.isArray(
+          airlineResponse?.data
+        )
+          ? airlineResponse.data
+          : [];
+
+        /*
+          2. Routes involving ADD
+
+          We use both directions because an airline may operate:
+          ADD -> destination
+          destination -> ADD
+        */
+
+        let routeData = [];
+
+        try {
+          const [
+            departureRoutes,
+            arrivalRoutes,
+          ] = await Promise.all([
             getRoutes({
               depIata: AIRPORT_CODE,
               limit: 100,
             }),
+
             getRoutes({
               arrIata: AIRPORT_CODE,
               limit: 100,
             }),
           ]);
 
-        routeData = [
-          ...(Array.isArray(departureRoutes?.data)
-            ? departureRoutes.data
-            : []),
-          ...(Array.isArray(arrivalRoutes?.data)
-            ? arrivalRoutes.data
-            : []),
-        ];
-      } catch (routeError) {
+          routeData = [
+            ...(Array.isArray(
+              departureRoutes?.data
+            )
+              ? departureRoutes.data
+              : []),
+
+            ...(Array.isArray(
+              arrivalRoutes?.data
+            )
+              ? arrivalRoutes.data
+              : []),
+          ];
+        } catch (routeError) {
+          console.warn(
+            "Unable to load ADD route data:",
+            routeError
+          );
+        }
+
         /*
-          Airline data is still useful if routes are unavailable.
-          Do not fail the entire directory.
-          */
-        console.warn(
-          "Unable to load ADD route data:",
-          routeError
+          3. Current live flights around ADD
+
+          This gives us a real, current signal for operators
+          represented in the live response.
+        */
+
+        let liveData = [];
+
+        try {
+          const [
+            departures,
+            arrivals,
+          ] = await Promise.all([
+            getLiveFlights({
+              depIata: AIRPORT_CODE,
+              limit: 100,
+            }),
+
+            getLiveFlights({
+              arrIata: AIRPORT_CODE,
+              limit: 100,
+            }),
+          ]);
+
+          liveData = [
+            ...(Array.isArray(departures?.data)
+              ? departures.data
+              : []),
+
+            ...(Array.isArray(arrivals?.data)
+              ? arrivals.data
+              : []),
+          ];
+        } catch (liveError) {
+          console.warn(
+            "Unable to load live ADD flights:",
+            liveError
+          );
+        }
+
+        const normalizedAirlines = airlineData
+          .map(normalizeAirline)
+          .filter(
+            (airline) =>
+              airline.name &&
+              airline.name !== "Unknown airline"
+          );
+
+        setAirlines(normalizedAirlines);
+        setRoutes(routeData);
+        setLiveFlights(liveData);
+        setLastUpdated(new Date());
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          err?.message ||
+            "AviationStack returned an unexpected response."
         );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      /*
-        3. Current live flights around ADD
-
-        This gives us a real, current signal for operators
-        represented in the live response.
-      */
-
-      let liveData = [];
-
-      try {
-        const [departures, arrivals] = await Promise.all([
-          getLiveFlights({
-            depIata: AIRPORT_CODE,
-            limit: 100,
-          }),
-
-          getLiveFlights({
-            arrIata: AIRPORT_CODE,
-            limit: 100,
-          }),
-        ]);
-
-        liveData = [
-          ...(Array.isArray(departures?.data)
-            ? departures.data
-            : []),
-          ...(Array.isArray(arrivals?.data)
-            ? arrivals.data
-            : []),
-        ];
-      } catch (liveError) {
-        console.warn(
-          "Unable to load live ADD flights:",
-          liveError
-        );
-      }
-
-      const normalizedAirlines = airlineData
-        .map(normalizeAirline)
-        .filter(
-          (airline) =>
-            airline.name &&
-            airline.name !== "Unknown airline"
-        );
-
-      setAirlines(normalizedAirlines);
-      setRoutes(routeData);
-      setLiveFlights(liveData);
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error(err);
-
-      setError(
-        err?.message ||
-          "AviationStack returned an unexpected response."
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     loadData();
@@ -856,12 +874,6 @@ export default function Airlines() {
 
   /* -------------------------------------------------------
      Countries / region filter
-
-     We cannot safely infer the original UI's custom regions
-     from incomplete airline data.
-
-     Therefore the region buttons are based on actual countries
-     represented in the API response.
   ------------------------------------------------------- */
 
   const countries = useMemo(() => {
@@ -917,7 +929,8 @@ export default function Airlines() {
   const totalPages = Math.max(
     1,
     Math.ceil(
-      filteredAirlines.length / ITEMS_PER_PAGE
+      filteredAirlines.length /
+        ITEMS_PER_PAGE
     )
   );
 
@@ -967,45 +980,45 @@ export default function Airlines() {
   ------------------------------------------------------- */
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb] text-[#131e19]">
+    <div className="min-h-screen bg-background text-neutral">
       <main className="w-full">
-        <div className="flex flex-col w-full">
-          <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 flex flex-col gap-5 max-w-[1600px] mx-auto w-full">
+        <div className="flex w-full flex-col">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
 
             {/* ---------------------------------------------
                 Page header
             --------------------------------------------- */}
 
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#febf27]" />
+                  <span className="h-2 w-2 rounded-full bg-secondary" />
 
-                  <span className="text-[11px] uppercase tracking-[0.06em] text-[#005932] font-semibold">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-primary-dark">
                     AviationStack Airline Registry
                   </span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#131e19]">
+                <h1 className="text-2xl font-semibold tracking-tight text-neutral sm:text-3xl">
                   Airlines Directory
                 </h1>
 
-                <p className="text-sm text-[#3f4941] max-w-3xl">
-                  Airline records available through the AviationStack
-                  API, with current route and live-flight information
-                  for {AIRPORT_CODE}.
+                <p className="max-w-3xl text-sm text-neutral-light">
+                  Airline records available through the
+                  AviationStack API, with current route and
+                  live-flight information for {AIRPORT_CODE}.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 bg-[#eaf7ee] px-3 py-2 rounded-xl border border-[#becabe]">
-                <CheckCircle2 className="w-5 h-5 text-[#005932]" />
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-primary-light px-3 py-2">
+                <CheckCircle2 className="h-5 w-5 text-primary-dark" />
 
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-wide text-[#6f7a70] font-semibold">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
                     Airport
                   </span>
 
-                  <span className="font-mono text-xs font-bold text-[#131e19]">
+                  <span className="font-mono text-xs font-bold text-neutral">
                     {AIRPORT_CODE} / {AIRPORT_ICAO}
                   </span>
                 </div>
@@ -1016,19 +1029,20 @@ export default function Airlines() {
                 API status
             --------------------------------------------- */}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#e2e8e4] rounded-xl px-4 py-3 shadow-sm">
+            <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-sm sm:flex-row sm:items-center">
               <div className="flex items-center gap-3">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#005932] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#005932]" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
                 </span>
 
                 <div>
-                  <span className="text-sm font-semibold text-[#005932]">
+                  <span className="text-sm font-semibold text-success">
                     AviationStack Connected
                   </span>
 
-                  <span className="ml-2 text-xs text-[#6f7a70]">
+                  <span className="ml-2 text-xs text-neutral-light">
                     {AIRPORT_NAME}
                   </span>
                 </div>
@@ -1036,7 +1050,7 @@ export default function Airlines() {
 
               <div className="flex items-center gap-3">
                 {lastUpdated && (
-                  <span className="text-xs text-[#6f7a70]">
+                  <span className="text-xs text-neutral-light">
                     Updated{" "}
                     {lastUpdated.toLocaleTimeString()}
                   </span>
@@ -1046,10 +1060,10 @@ export default function Airlines() {
                   type="button"
                   onClick={() => loadData(true)}
                   disabled={refreshing}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e4f1e9] text-[#131e19] text-xs font-semibold hover:bg-[#deebe3] disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-light px-3 py-1.5 text-xs font-semibold text-neutral hover:bg-primary hover:text-white disabled:opacity-50"
                 >
                   <RefreshCw
-                    className={`w-4 h-4 ${
+                    className={`h-4 w-4 ${
                       refreshing ? "animate-spin" : ""
                     }`}
                   />
@@ -1063,7 +1077,7 @@ export default function Airlines() {
                 Statistics
             --------------------------------------------- */}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <StatCard
                 icon={Users}
                 label="Airline Records"
@@ -1080,7 +1094,7 @@ export default function Airlines() {
                     : operatorsWithAddRoutes
                 }
                 description="Airlines represented in ADD route data"
-                iconClass="text-[#7a5900]"
+                iconClass="text-warning"
               />
 
               <StatCard
@@ -1092,7 +1106,7 @@ export default function Airlines() {
                     : totalAddRoutes
                 }
                 description="Routes returned for ADD"
-                iconClass="text-[#0043b5]"
+                iconClass="text-info"
               />
             </div>
 
@@ -1100,16 +1114,16 @@ export default function Airlines() {
                 Search / filters
             --------------------------------------------- */}
 
-            <div className="bg-white p-5 rounded-xl border border-[#e2e8e4] shadow-sm flex flex-col gap-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6f7a70]" />
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-light" />
 
                 <input
                   value={search}
                   onChange={(event) =>
                     setSearch(event.target.value)
                   }
-                  className="w-full h-11 pl-10 pr-10 rounded-xl bg-[#eaf7ee] text-[#131e19] text-sm placeholder-[#6f7a70] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#005932]/10 transition-all"
+                  className="h-11 w-full rounded-xl border border-border bg-primary-light pl-10 pr-10 text-sm text-neutral placeholder:text-neutral-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="Search airline by name, callsign, IATA, ICAO or country..."
                   type="text"
                 />
@@ -1118,26 +1132,26 @@ export default function Airlines() {
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f7a70] hover:text-[#131e19]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-light hover:text-neutral"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
 
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-wide text-[#6f7a70] mr-1 font-semibold">
+                  <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-light">
                     Country:
                   </span>
 
                   <button
                     type="button"
                     onClick={() => setRegion("all")}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
                       region === "all"
-                        ? "bg-[#005932] text-white shadow-sm"
-                        : "bg-[#e4f1e9] text-[#3f4941] hover:bg-[#deebe3]"
+                        ? "bg-primary-dark text-white shadow-sm"
+                        : "bg-primary-light text-neutral-light hover:bg-primary hover:text-white"
                     }`}
                   >
                     All
@@ -1150,10 +1164,10 @@ export default function Airlines() {
                       onClick={() =>
                         setRegion(country)
                       }
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                      className={`rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
                         region === country
-                          ? "bg-[#28332d] text-white shadow-sm"
-                          : "bg-[#e4f1e9] text-[#3f4941] hover:bg-[#deebe3]"
+                          ? "bg-neutral text-white shadow-sm"
+                          : "bg-primary-light text-neutral-light hover:bg-primary hover:text-white"
                       }`}
                     >
                       {country}
@@ -1161,9 +1175,8 @@ export default function Airlines() {
                   ))}
                 </div>
 
-                <div className="text-xs text-[#6f7a70]">
-                  {filteredAirlines.length} matching
-                  airline
+                <div className="text-xs text-neutral-light">
+                  {filteredAirlines.length} matching airline
                   {filteredAirlines.length === 1
                     ? ""
                     : "s"}
@@ -1187,7 +1200,7 @@ export default function Airlines() {
             --------------------------------------------- */}
 
             {!error && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {loading ? (
                   Array.from({
                     length: 6,
@@ -1225,23 +1238,23 @@ export default function Airlines() {
             {!loading &&
               !error &&
               filteredAirlines.length > 0 && (
-                <div className="bg-white p-4 rounded-xl border border-[#e2e8e4] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <span className="text-xs text-[#6f7a70]">
+                <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm sm:flex-row">
+                  <span className="text-xs text-neutral-light">
                     Showing{" "}
-                    <strong className="text-[#131e19]">
+                    <strong className="text-neutral">
                       {(page - 1) *
                         ITEMS_PER_PAGE +
                         1}
                     </strong>{" "}
                     to{" "}
-                    <strong className="text-[#131e19]">
+                    <strong className="text-neutral">
                       {Math.min(
                         page * ITEMS_PER_PAGE,
                         filteredAirlines.length
                       )}
                     </strong>{" "}
                     of{" "}
-                    <strong className="text-[#131e19]">
+                    <strong className="text-neutral">
                       {filteredAirlines.length}
                     </strong>
                   </span>
@@ -1258,12 +1271,12 @@ export default function Airlines() {
                           )
                         )
                       }
-                      className="p-2 rounded-lg bg-[#e4f1e9] text-[#131e19] hover:bg-[#deebe3] disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-primary-light p-2 text-neutral hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="h-4 w-4" />
                     </button>
 
-                    <span className="px-3 text-xs font-semibold">
+                    <span className="px-3 text-xs font-semibold text-neutral">
                       Page {page} of {totalPages}
                     </span>
 
@@ -1278,9 +1291,9 @@ export default function Airlines() {
                           )
                         )
                       }
-                      className="p-2 rounded-lg bg-[#e4f1e9] text-[#131e19] hover:bg-[#deebe3] disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-primary-light p-2 text-neutral hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -1290,18 +1303,18 @@ export default function Airlines() {
                 Data limitations / telemetry footer
             --------------------------------------------- */}
 
-            <div className="bg-white p-5 rounded-xl border border-[#e2e8e4] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-surface p-5 shadow-sm md:flex-row md:items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#005932]/10 flex items-center justify-center text-[#005932] shrink-0">
-                  <RefreshCw className="w-5 h-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <RefreshCw className="h-5 w-5" />
                 </div>
 
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-[#131e19]">
+                  <span className="text-sm font-bold text-neutral">
                     Live AviationStack Data
                   </span>
 
-                  <span className="text-xs text-[#3f4941]">
+                  <span className="text-xs text-neutral-light">
                     Airline records, ADD routes and current
                     flight responses are loaded from the API.
                   </span>
@@ -1309,14 +1322,14 @@ export default function Airlines() {
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-[10px] uppercase tracking-wide font-mono text-[#6f7a70]">
+                <span className="font-mono text-[10px] uppercase tracking-wide text-neutral-light">
                   Refresh: {AUTO_REFRESH_SECONDS}s
                 </span>
 
                 <button
                   type="button"
                   onClick={() => loadData(true)}
-                  className="px-4 py-2 bg-[#e4f1e9] hover:bg-[#deebe3] text-[#131e19] rounded-xl text-xs font-semibold transition-all"
+                  className="rounded-xl bg-primary-light px-4 py-2 text-xs font-semibold text-neutral transition-all hover:bg-primary hover:text-white"
                 >
                   Refresh Data
                 </button>

@@ -1,24 +1,19 @@
+
 import { useState } from "react"
 
 import Sidebar from "./Sidebar"
 import Header from "./Header"
 
-
 function DashboardLayout({
   children,
   currentPath = "/",
+  user,
+  onLogout,
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] =
     useState(false)
 
   const handleNavigation = (path) => {
-    /*
-     * This is intentionally simple for now.
-     *
-     * When you install/configure React Router,
-     * replace this with navigate(path).
-     */
-
     if (window.location.pathname !== path) {
       window.history.pushState({}, "", path)
 
@@ -32,23 +27,20 @@ function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-
       {/* Sidebar */}
       <Sidebar
         currentPath={currentPath}
         mobileOpen={mobileSidebarOpen}
-        onClose={() =>
-          setMobileSidebarOpen(false)
-        }
+        onClose={() => setMobileSidebarOpen(false)}
         onNavigate={handleNavigation}
       />
 
       {/* Header */}
       <Header
         currentPath={currentPath}
-        onMenuClick={() =>
-          setMobileSidebarOpen(true)
-        }
+        user={user}
+        onLogout={onLogout}
+        onMenuClick={() => setMobileSidebarOpen(true)}
       />
 
       {/* Main application area */}

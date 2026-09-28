@@ -1,116 +1,129 @@
 import {
   Activity,
-  Plane,
   BarChart3,
-  Globe2,
+  HelpCircle,
   LayoutDashboard,
   Map,
+  Plane,
   PlaneLanding,
   PlaneTakeoff,
-  Route,
+  Search,
   Settings,
+  Star,
   X,
-} from "lucide-react"
+} from "lucide-react";
 
-const navigationGroups = [
+const navigationItems = [
   {
-    title: "Overview",
-    items: [
-      {
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        path: "/",
-      },
-    ],
+    label: "Overview",
+    icon: LayoutDashboard,
+    path: "/dashboard",
   },
   {
-    title: "Flight Operations",
-    items: [
-      {
-        label: "Flights",
-        icon: Plane,
-        path: "/flights",
-      },
-      {
-        label: "Live Flights",
-        icon: Activity,
-        path: "/live-map",
-      },
-      {
-        label: "Departures",
-        icon: PlaneTakeoff,
-        path: "/departures",
-      },
-      {
-        label: "Arrivals",
-        icon: PlaneLanding,
-        path: "/arrivals",
-      },
-      {
-        label: "Routes",
-        icon: Route,
-        path: "/routes",
-      },
-    ],
+    label: "Live Flights",
+    icon: Activity,
+    path: "/live-map",
+    live: true,
   },
   {
-    title: "Explore",
-    items: [
-      {
-        label: "Airports",
-        icon: Globe2,
-        path: "/airports",
-      },
-      {
-        label: "Airlines",
-        icon: BarChart3,
-        path: "/airlines",
-      },
-      {
-        label: "Live Map",
-        icon: Map,
-        path: "/map",
-      },
-    ],
+    label: "Flight Search",
+    icon: Search,
+    path: "/flights",
   },
-]
+  {
+    label: "Departures",
+    icon: PlaneTakeoff,
+    path: "/departures",
+  },
+  {
+    label: "Arrivals",
+    icon: PlaneLanding,
+    path: "/arrivals",
+  },
+  {
+    label: "Airports",
+    icon: Map,
+    path: "/airports",
+  },
+  {
+    label: "Airlines",
+    icon: BarChart3,
+    path: "/airlines",
+  },
+  {
+    label: "Map",
+    icon: Map,
+    path: "/map",
+  },
+  {
+    label: "Favorites",
+    icon: Star,
+    path: "/favorites",
+  },
+];
 
 function Sidebar({
-  currentPath = "/",
+  currentPath = "/dashboard",
   mobileOpen = false,
   onClose,
   onNavigate,
 }) {
+  /*
+   * Determine whether a navigation item is active.
+   */
   const isActive = (path) => {
-    if (path === "/") {
-      return currentPath === "/"
+    if (path === "/dashboard") {
+      return (
+        currentPath === "/dashboard" ||
+        currentPath === "/"
+      );
     }
 
-    return currentPath.startsWith(path)
-  }
+    return (
+      currentPath === path ||
+      currentPath.startsWith(`${path}/`)
+    );
+  };
 
+  /*
+   * Handle navigation.
+   *
+   * Uses the application's onNavigate callback when
+   * available. Otherwise falls back to browser history.
+   */
   const handleNavigation = (path) => {
     if (onNavigate) {
-      onNavigate(path)
+      onNavigate(path);
+    } else {
+      window.history.pushState({}, "", path);
+
+      window.dispatchEvent(
+        new PopStateEvent("popstate")
+      );
     }
 
     if (onClose) {
-      onClose()
+      onClose();
     }
-  }
+  };
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* ============================================================
+          MOBILE BACKDROP
+      ============================================================ */}
       {mobileOpen && (
         <button
           type="button"
           aria-label="Close navigation"
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-neutral/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[1px] lg:hidden"
         />
       )}
 
+      {/* ============================================================
+          SIDEBAR
+      ============================================================ */}
       <aside
         className={`
           fixed
@@ -121,10 +134,12 @@ function Sidebar({
           h-screen
           w-[240px]
           flex-col
+          overflow-hidden
           border-r
-          border-neutral/10
-          bg-neutral
+          border-white/[0.06]
+          bg-[#0B1713]
           text-white
+          shadow-xl
           transition-transform
           duration-300
           lg:translate-x-0
@@ -135,124 +150,165 @@ function Sidebar({
           }
         `}
       >
-        {/* Brand */}
-        <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-white/10 px-5">
+        {/* ========================================================
+            BRAND HEADER
+        ======================================================== */}
+        <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/[0.06] px-5">
           <button
             type="button"
-            onClick={() => handleNavigation("/")}
+            onClick={() =>
+              handleNavigation("/dashboard")
+            }
             className="flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-primary">
+            {/* Logo */}
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#087A47] shadow-sm">
               <img
                 src="/images/aerotrack-logo.png"
                 alt="AeroTrack"
                 className="h-full w-full object-cover"
                 onError={(event) => {
-                  event.currentTarget.style.display = "none"
+                  event.currentTarget.style.display =
+                    "none";
                 }}
               />
 
+              {/* Fallback icon */}
               <Plane
-                size={20}
-                className="text-white"
+                size={22}
+                strokeWidth={2}
+                className="absolute text-white"
               />
             </div>
 
+            {/* Brand text */}
             <div className="text-left">
-              <p className="text-base font-bold tracking-tight">
-                AeroTrack
+              <p className="text-[17px] font-bold leading-tight tracking-tight text-white">
+                AeroFlight
               </p>
 
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/50">
+              <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-white/40">
                 Aviation Intelligence
               </p>
             </div>
           </button>
 
+          {/* Mobile close */}
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Close sidebar"
+            className="rounded-lg p-2 text-white/40 transition hover:bg-white/10 hover:text-white lg:hidden"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <div className="space-y-6">
-            {navigationGroups.map((group) => (
-              <div key={group.title}>
-                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">
-                  {group.title}
-                </p>
+        {/* ========================================================
+            NAVIGATION
+        ======================================================== */}
+        <nav className="flex-1 overflow-y-auto px-3 py-6">
+          <div className="space-y-1.5">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
 
-                <div className="space-y-1">
-                  {group.items.map((item) => {
-                    const Icon = item.icon
-                    const active = isActive(item.path)
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() =>
+                    handleNavigation(item.path)
+                  }
+                  aria-current={
+                    active ? "page" : undefined
+                  }
+                  className={`
+                    group
+                    flex
+                    min-h-[44px]
+                    w-full
+                    items-center
+                    gap-3
+                    rounded-lg
+                    px-3.5
+                    text-left
+                    transition-all
+                    duration-150
+                    ${
+                      active
+                        ? "bg-[#087A47] text-white shadow-sm"
+                        : "text-white/60 hover:bg-white/[0.05] hover:text-white"
+                    }
+                  `}
+                >
+                  {/* Icon */}
+                  <Icon
+                    size={20}
+                    strokeWidth={active ? 2.2 : 1.8}
+                    className={`
+                      shrink-0
+                      transition-colors
+                      ${
+                        active
+                          ? "text-white"
+                          : "text-white/50 group-hover:text-white/80"
+                      }
+                    `}
+                  />
 
-                    return (
-                      <button
-                        key={item.path}
-                        type="button"
-                        onClick={() =>
-                          handleNavigation(item.path)
+                  {/* Label */}
+                  <span
+                    className={`
+                      text-[13px]
+                      font-medium
+                      leading-none
+                      ${
+                        active
+                          ? "text-white"
+                          : "text-white/65 group-hover:text-white"
+                      }
+                    `}
+                  >
+                    {item.label}
+                  </span>
+
+                  {/* Live indicator */}
+                  {item.live && (
+                    <span
+                      className={`
+                        relative
+                        ml-auto
+                        flex
+                        h-2
+                        w-2
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        ${
+                          active
+                            ? "bg-white"
+                            : "bg-[#0A9B5B]"
                         }
-                        className={`
-                          group
-                          flex
-                          w-full
-                          items-center
-                          gap-3
-                          rounded-lg
-                          px-3
-                          py-2.5
-                          text-left
-                          text-sm
-                          font-medium
-                          transition-all
-                          duration-200
-                          ${
-                            active
-                              ? "bg-primary text-white shadow-sm"
-                              : "text-white/65 hover:bg-white/5 hover:text-white"
-                          }
-                        `}
-                      >
-                        <Icon
-                          size={18}
-                          strokeWidth={active ? 2.2 : 1.8}
-                        />
-
-                        <span>{item.label}</span>
-
-                        {item.label === "Live Flights" && (
-                          <span
-                            className={`
-                              ml-auto
-                              h-1.5
-                              w-1.5
-                              rounded-full
-                              ${
-                                active
-                                  ? "bg-white"
-                                  : "bg-primary"
-                              }
-                            `}
-                          />
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
+                      `}
+                    >
+                      {!active && (
+                        <span className="absolute h-full w-full animate-ping rounded-full bg-[#0A9B5B] opacity-40" />
+                      )}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </nav>
 
-        {/* Bottom */}
-        <div className="border-t border-white/10 p-3">
+        {/* ========================================================
+            BOTTOM AREA
+        ======================================================== */}
+        <div className="shrink-0 border-t border-white/[0.06] px-3 pb-4 pt-3">
+          {/* Settings */}
           <button
             type="button"
             onClick={() =>
@@ -260,48 +316,91 @@ function Sidebar({
             }
             className={`
               flex
+              min-h-[44px]
               w-full
               items-center
               gap-3
               rounded-lg
-              px-3
-              py-2.5
-              text-sm
-              font-medium
+              px-3.5
+              text-left
               transition-colors
               ${
                 isActive("/settings")
                   ? "bg-white/10 text-white"
-                  : "text-white/55 hover:bg-white/5 hover:text-white"
+                  : "text-white/55 hover:bg-white/[0.05] hover:text-white"
               }
             `}
           >
-            <Settings size={18} />
+            <Settings
+              size={19}
+              strokeWidth={1.8}
+            />
 
-            <span>Settings</span>
+            <span className="text-[13px] font-medium">
+              Settings
+            </span>
           </button>
 
-          <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-50" />
+          {/* Help & Support */}
+          <button
+            type="button"
+            onClick={() =>
+              handleNavigation("/support")
+            }
+            className={`
+              mt-1
+              flex
+              min-h-[44px]
+              w-full
+              items-center
+              gap-3
+              rounded-lg
+              px-3.5
+              text-left
+              transition-colors
+              ${
+                isActive("/support")
+                  ? "bg-white/10 text-white"
+                  : "text-white/55 hover:bg-white/[0.05] hover:text-white"
+              }
+            `}
+          >
+            <HelpCircle
+              size={19}
+              strokeWidth={1.8}
+            />
 
-                <span className="relative h-2 w-2 rounded-full bg-primary" />
-              </span>
+            <span className="text-[13px] font-medium">
+              Help &amp; Support
+            </span>
+          </button>
 
-              <span className="text-[11px] font-semibold text-white/70">
-                AviationStack
+          {/* ======================================================
+              DEVELOPER PROFILE
+          ====================================================== */}
+          <div className="mt-3 flex min-h-[58px] items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.045] px-3">
+            {/* Avatar */}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#26352F]">
+              <span className="text-base">
+                👨🏽‍💻
               </span>
             </div>
 
-            <p className="mt-1 text-[10px] leading-4 text-white/35">
-              Global aviation data connection
-            </p>
+            {/* Profile information */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-bold text-white">
+                Hermela
+              </p>
+
+              <p className="mt-1 truncate text-[10px] text-white/40">
+                Frontend Developer
+              </p>
+            </div>
           </div>
         </div>
       </aside>
     </>
-  )
+  );
 }
 
-export default Sidebar
+export default Sidebar;

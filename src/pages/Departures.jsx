@@ -1,41 +1,48 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  Activity,
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Download,
+  ExternalLink,
+  Filter,
   Plane,
-  Printer,
+  PlaneLanding,
+  PlaneTakeoff,
   RefreshCw,
   Search,
   Timer,
+  Users,
   X,
-} from "lucide-react"
-
-import { getLiveFlights } from "../services/aviationStack"
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getLiveFlights } from "../services/aviationStack";
 
 const AIRPORT_CODE =
-  import.meta.env.VITE_AIRPORT_CODE || "ADD"
+  import.meta.env.VITE_AIRPORT_CODE || "ADD";
 
 const AIRPORT_ICAO =
-  import.meta.env.VITE_AIRPORT_ICAO || "HAAB"
+  import.meta.env.VITE_AIRPORT_ICAO || "HAAB";
 
 const AIRPORT_NAME =
   import.meta.env.VITE_AIRPORT_NAME ||
-  "Addis Ababa Bole International Airport"
+  "Addis Ababa Bole International Airport";
 
 const AIRPORT_LOCATION =
   import.meta.env.VITE_AIRPORT_LOCATION ||
-  "Addis Ababa, Ethiopia"
+  "Addis Ababa, Ethiopia";
 
-const ITEMS_PER_PAGE = 8
-const AUTO_REFRESH_SECONDS = 30
+const ITEMS_PER_PAGE = 8;
+const AUTO_REFRESH_SECONDS = 30;
 
 const TERMINALS = [
   { value: "all", label: "All Terminals" },
   { value: "T1", label: "T1 (Domestic)" },
   { value: "T2", label: "T2 (International)" },
-]
+];
 
 const STATUS_FILTERS = [
   { value: "all", label: "All" },
@@ -44,7 +51,7 @@ const STATUS_FILTERS = [
   { value: "delayed", label: "Delayed" },
   { value: "landed", label: "Landed" },
   { value: "cancelled", label: "Cancelled" },
-]
+];
 
 const TIME_WINDOWS = [
   { value: "all", label: "All Slots" },
@@ -52,469 +59,421 @@ const TIME_WINDOWS = [
   { value: "afternoon", label: "Afternoon (12:00 – 18:00)" },
   { value: "evening", label: "Evening (18:00 – 24:00)" },
   { value: "night", label: "Night (00:00 – 06:00)" },
-]
+];
 
-const API_STATUS_MAP = {
-  active: "active",
-  scheduled: "scheduled",
-  delayed: "delayed",
-  landed: "landed",
-  cancelled: "cancelled",
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getAirportCode(flight) {
+  return (
+    flight?.arrival?.iata ||
+    flight?.arrival?.icao ||
+    flight?.departure?.iata ||
+    "N/A"
+  );
 }
 
-function getAirportCode(value) {
-  if (!value) return "—"
-
-  if (typeof value === "string") {
-    return value
-  }
-
-  return value.iata || value.icao || "—"
+function getAirportName(flight) {
+  return (
+    flight?.arrival?.airport ||
+    flight?.arrival?.airport_name ||
+    flight?.departure?.airport ||
+    "Unknown Airport"
+  );
 }
 
-function getAirportName(value) {
-  if (!value) return "—"
-
-  if (typeof value === "string") {
-    return value
-  }
-
-  return value.airport || value.name || "—"
+function getCountry(flight) {
+  return (
+    flight?.arrival?.country ||
+    flight?.departure?.country ||
+    "Unknown"
+  );
 }
 
-function getCountry(value) {
-  if (!value || typeof value === "string") {
-    return ""
-  }
-
-  return value.country || ""
+function getAirlineName(flight) {
+  return (
+    flight?.airline?.name ||
+    flight?.airline?.airline_name ||
+    "Unknown Airline"
+  );
 }
 
-function getAirlineName(airline) {
-  if (!airline) return "—"
-
-  if (typeof airline === "string") {
-    return airline
-  }
-
-  return airline.name || airline.airline_name || "—"
-}
-
-function getAirlineCode(airline) {
-  if (!airline) return "—"
-
-  if (typeof airline === "string") {
-    return airline
-  }
-
-  return airline.iata || airline.icao || "—"
+function getAirlineCode(flight) {
+  return (
+    flight?.airline?.iata ||
+    flight?.airline?.icao ||
+    "--"
+  );
 }
 
 function getFlightNumber(flight) {
-  if (!flight) return "—"
-
-  if (typeof flight === "string") {
-    return flight
-  }
-
   return (
-    flight.iata ||
-    flight.number ||
-    flight.flight_number ||
-    flight.icao ||
-    "—"
-  )
+    flight?.flight?.iata ||
+    flight?.flight?.icao ||
+    flight?.flight?.number ||
+    "N/A"
+  );
 }
 
-function getAircraftModel(aircraft) {
-  if (!aircraft) return "—"
-
-  if (typeof aircraft === "string") {
-    return aircraft
-  }
-
+function getAircraftModel(flight) {
   return (
-    aircraft.model ||
-    aircraft.model_text ||
-    aircraft.type ||
-    "—"
-  )
+    flight?.aircraft?.model ||
+    flight?.aircraft?.model_text ||
+    "Unknown"
+  );
 }
 
-function getAircraftRegistration(aircraft) {
-  if (!aircraft) return "—"
-
-  if (typeof aircraft === "string") {
-    return aircraft
-  }
-
+function getAircraftRegistration(flight) {
   return (
-    aircraft.registration ||
-    aircraft.reg ||
-    aircraft.tail_number ||
-    "—"
-  )
+    flight?.aircraft?.registration ||
+    flight?.flight?.registration ||
+    "N/A"
+  );
 }
 
 function getDateValue(value) {
-  if (!value) return null
+  if (!value) return null;
 
-  const date = new Date(value)
+  const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-
-  return date
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatTime(value) {
-  const date = getDateValue(value)
+  const date = getDateValue(value);
 
-  if (!date) return "—"
+  if (!date) return "--:--";
 
   return date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  })
+  });
 }
 
 function formatDateTime(value) {
-  const date = getDateValue(value)
+  const date = getDateValue(value);
 
-  if (!date) return "—"
+  if (!date) return "N/A";
 
   return date.toLocaleString([], {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function normalizeStatus(status) {
-  const value = String(status || "")
-    .trim()
-    .toLowerCase()
+function normalizeStatus(flight) {
+  const status = String(
+    flight?.flight_status ||
+      flight?.status ||
+      "scheduled"
+  ).toLowerCase();
 
-  if (value === "active") return "Active"
-  if (value === "scheduled") return "Scheduled"
-  if (value === "delayed") return "Delayed"
-  if (value === "landed") return "Landed"
-  if (value === "cancelled") return "Cancelled"
-  if (value === "canceled") return "Cancelled"
+  if (
+    status.includes("cancel") ||
+    status === "cancelled"
+  ) {
+    return "cancelled";
+  }
 
-  return status || "Unknown"
+  if (
+    status.includes("delay") ||
+    status === "delayed"
+  ) {
+    return "delayed";
+  }
+
+  if (
+    status.includes("land") ||
+    status === "landed"
+  ) {
+    return "landed";
+  }
+
+  if (
+    status.includes("active") ||
+    status === "active"
+  ) {
+    return "active";
+  }
+
+  return "scheduled";
 }
 
-function normalizeFlight(item, index) {
-  const departure = item?.departure || {}
-  const arrival = item?.arrival || {}
-  const airline = item?.airline || {}
-  const aircraft = item?.aircraft || {}
-  const flight = item?.flight || {}
-
+function normalizeFlight(flight, index) {
   const scheduled =
-    departure.scheduled ||
-    item?.scheduled_departure ||
-    item?.departure_time ||
-    null
+    flight?.arrival?.scheduled ||
+    flight?.arrival?.estimated ||
+    flight?.arrival?.actual ||
+    null;
 
   const estimated =
-    departure.estimated ||
-    item?.estimated_departure ||
-    item?.departure_estimated ||
-    null
+    flight?.arrival?.estimated ||
+    null;
 
   const actual =
-    departure.actual ||
-    item?.actual_departure ||
-    item?.departure_actual ||
-    null
-
-  const delayedMinutes =
-    departure.delay ??
-    item?.departure_delay ??
-    item?.delay ??
-    null
-
-  const terminal =
-    departure.terminal ||
-    item?.terminal ||
-    null
-
-  const gate =
-    departure.gate ||
-    item?.gate ||
-    null
+    flight?.arrival?.actual ||
+    null;
 
   return {
-    id:
-      item?.id ||
-      flight?.iata ||
-      `${flight?.icao || "flight"}-${index}`,
+    ...flight,
+    _id:
+      flight?.flight?.iata ||
+      flight?.flight?.icao ||
+      `${index}-${scheduled || "flight"}`,
 
-    flightNumber:
-      getFlightNumber(flight) !== "—"
-        ? getFlightNumber(flight)
-        : item?.flight_number || "—",
+    airportCode: getAirportCode(flight),
+    airportName: getAirportName(flight),
+    country: getCountry(flight),
 
-    airlineName:
-      getAirlineName(airline) !== "—"
-        ? getAirlineName(airline)
-        : item?.airline_name || "—",
+    airlineName: getAirlineName(flight),
+    airlineCode: getAirlineCode(flight),
 
-    airlineCode:
-      getAirlineCode(airline) !== "—"
-        ? getAirlineCode(airline)
-        : item?.airline_code || "—",
+    flightNumber: getFlightNumber(flight),
 
-    destinationName:
-      getAirportName(arrival) !== "—"
-        ? getAirportName(arrival)
-        : item?.destination || "—",
-
-    destinationCode:
-      getAirportCode(arrival) !== "—"
-        ? getAirportCode(arrival)
-        : item?.destination_code || "—",
-
-    destinationCountry:
-      getCountry(arrival) ||
-      item?.destination_country ||
-      "",
-
-    aircraftModel:
-      getAircraftModel(aircraft) !== "—"
-        ? getAircraftModel(aircraft)
-        : item?.aircraft_model || "—",
-
-    registration:
-      getAircraftRegistration(aircraft) !== "—"
-        ? getAircraftRegistration(aircraft)
-        : item?.tail_number || "—",
+    aircraftModel: getAircraftModel(flight),
+    aircraftRegistration:
+      getAircraftRegistration(flight),
 
     scheduled,
     estimated,
     actual,
 
-    terminal,
-    gate,
+    status: normalizeStatus(flight),
 
-    delay: delayedMinutes,
+    terminal:
+      flight?.arrival?.terminal ||
+      flight?.terminal ||
+      "N/A",
 
-    status: normalizeStatus(
-      item?.flight_status || item?.status
-    ),
+    gate:
+      flight?.arrival?.gate ||
+      flight?.gate ||
+      "N/A",
 
-    departureAirport:
-      getAirportName(departure),
+    baggage:
+      flight?.arrival?.baggage ||
+      flight?.baggage ||
+      null,
 
-    departureCode:
-      getAirportCode(departure),
-
-    raw: item,
-  }
+    delay:
+      flight?.arrival?.delay ||
+      flight?.delay ||
+      null,
+  };
 }
 
 function getStatusKey(status) {
-  const value = String(status || "").toLowerCase()
+  const key = String(status || "").toLowerCase();
 
-  if (value.includes("delay")) return "delayed"
-  if (value.includes("cancel")) return "cancelled"
-  if (value.includes("land")) return "landed"
-  if (value.includes("active")) return "active"
-  if (value.includes("schedule")) return "scheduled"
+  if (key === "active") return "active";
+  if (key === "delayed") return "delayed";
+  if (key === "cancelled") return "cancelled";
+  if (key === "landed") return "landed";
 
-  return value
+  return "scheduled";
 }
 
+/*
+ * IMPORTANT:
+ * These colors use your semantic Tailwind theme tokens.
+ * Because your index.css maps these tokens to CSS variables,
+ * they automatically change when .dark is applied.
+ */
 function getStatusClasses(status) {
-  const key = getStatusKey(status)
+  const key = getStatusKey(status);
 
   switch (key) {
     case "active":
-      return "bg-primary-fixed text-on-primary-fixed"
+      return "bg-primary-light text-primary";
 
     case "delayed":
-      return "bg-secondary-fixed text-on-secondary-fixed"
+      return "bg-secondary-light text-secondary";
 
     case "cancelled":
-      return "bg-error-container text-on-error-container"
+      return "bg-danger/10 text-danger";
 
     case "landed":
-      return "bg-surface-container-high text-on-surface"
+      return "bg-neutral-light/10 text-neutral";
 
     case "scheduled":
     default:
-      return "bg-tertiary-fixed text-on-tertiary-fixed"
+      return "bg-info/10 text-info";
   }
 }
 
 function getStatusDot(status) {
-  const key = getStatusKey(status)
+  const key = getStatusKey(status);
 
   switch (key) {
     case "active":
-      return "bg-primary"
+      return "bg-success";
 
     case "delayed":
-      return "bg-secondary"
+      return "bg-warning";
 
     case "cancelled":
-      return "bg-error"
+      return "bg-danger";
 
     case "landed":
-      return "bg-outline"
+      return "bg-neutral-light";
 
+    case "scheduled":
     default:
-      return "bg-tertiary"
+      return "bg-info";
   }
 }
 
-function getTimeWindow(dateValue) {
-  const date = getDateValue(dateValue)
+function getTimeWindow(value) {
+  const date = getDateValue(value);
 
-  if (!date) return "unknown"
+  if (!date) return "unknown";
 
-  const hour = date.getHours()
+  const hour = date.getHours();
 
-  if (hour >= 6 && hour < 12) return "morning"
-  if (hour >= 12 && hour < 18) return "afternoon"
-  if (hour >= 18 && hour < 24) return "evening"
+  if (hour >= 6 && hour < 12) {
+    return "morning";
+  }
 
-  return "night"
+  if (hour >= 12 && hour < 18) {
+    return "afternoon";
+  }
+
+  if (hour >= 18 && hour < 24) {
+    return "evening";
+  }
+
+  return "night";
 }
 
+/* =========================================================
+   METRIC CARD
+========================================================= */
+
 function MetricCard({
+  icon: Icon,
   label,
   value,
   description,
-  icon: Icon,
   iconClass = "text-primary",
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-white p-4 shadow-sm">
-      <div className="flex min-w-0 flex-col">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6f7a70]">
+    <div className="flex items-center justify-between rounded-xl bg-surface p-4 shadow-sm border border-border">
+      <div className="min-w-0">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-light">
           {label}
         </span>
 
-        <span className="mt-1 text-[22px] font-bold leading-7 text-[#131e19]">
+        <div className="mt-1 text-[22px] font-bold leading-7 text-neutral">
           {value}
-        </span>
+        </div>
 
         {description && (
-          <span className="mt-0.5 text-xs text-[#6f7a70]">
+          <span className="mt-0.5 block text-xs text-neutral-light">
             {description}
           </span>
         )}
       </div>
 
       <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eaf7ee] ${iconClass}`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light ${iconClass}`}
       >
-        <Icon size={20} />
+        <Icon size={19} />
       </div>
     </div>
-  )
+  );
 }
 
-function StatusBadge({ status }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${getStatusClasses(
-        status
-      )}`}
-    >
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${getStatusDot(
-          status
-        )}`}
-      />
-
-      {status}
-    </span>
-  )
-}
+/* =========================================================
+   LOADING ROWS
+========================================================= */
 
 function LoadingRows() {
-  return Array.from({ length: ITEMS_PER_PAGE }).map(
-    (_, index) => (
-      <tr key={index} className="animate-pulse">
-        {Array.from({ length: 10 }).map(
-          (_, cellIndex) => (
-            <td key={cellIndex} className="px-4 py-4">
-              <div className="h-4 rounded bg-[#e4f1e9]" />
-            </td>
-          )
-        )}
-      </tr>
-    )
-  )
-}
-
-function EmptyState({ hasFilters, onReset }) {
   return (
-    <tr>
-      <td colSpan={10} className="px-6 py-16 text-center">
-        <div className="mx-auto flex max-w-md flex-col items-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#eaf7ee] text-[#005932]">
-            <Plane size={22} />
-          </div>
-
-          <h3 className="mt-4 text-base font-semibold text-[#131e19]">
-            {hasFilters
-              ? "No departures match your filters"
-              : "No departure flights returned"}
-          </h3>
-
-          <p className="mt-1 text-sm text-[#6f7a70]">
-            {hasFilters
-              ? "Try changing your search, terminal, status, or time window."
-              : "AviationStack did not return any departure records for this airport."}
-          </p>
-
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="mt-4 rounded-lg bg-[#005932] px-4 py-2 text-sm font-medium text-white hover:bg-[#087443]"
-            >
-              Reset filters
-            </button>
+    <>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <tr
+          key={index}
+          className="border-b border-divider"
+        >
+          {Array.from({ length: 8 }).map(
+            (_, cellIndex) => (
+              <td
+                key={cellIndex}
+                className="px-4 py-4"
+              >
+                <div className="h-4 w-full max-w-[120px] animate-pulse rounded bg-primary-light" />
+              </td>
+            )
           )}
-        </div>
-      </td>
-    </tr>
-  )
+        </tr>
+      ))}
+    </>
+  );
 }
 
-function FlightDetailsModal({ flight, onClose }) {
-  if (!flight) return null
+/* =========================================================
+   EMPTY STATE
+========================================================= */
 
-  const departureDate =
-    flight.actual ||
-    flight.estimated ||
-    flight.scheduled
+function EmptyState({ onReset }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-light text-primary-dark">
+        <Plane size={25} />
+      </div>
+
+      <h3 className="text-base font-bold text-neutral">
+        No flights found
+      </h3>
+
+      <p className="mt-1 max-w-md text-sm text-neutral-light">
+        No departures match your current search and
+        filter settings.
+      </p>
+
+      <button
+        type="button"
+        onClick={onReset}
+        className="mt-5 rounded-lg bg-primary-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary"
+      >
+        Clear Filters
+      </button>
+    </div>
+  );
+}
+
+/* =========================================================
+   FLIGHT DETAILS MODAL
+========================================================= */
+
+function FlightDetailsModal({
+  flight,
+  onClose,
+}) {
+  if (!flight) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
-      onMouseDown={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-surface shadow-2xl border border-border"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[#d9e6dd] px-6 py-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7a70]">
-              Flight details
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-light">
+              Flight Details
             </p>
 
-            <h2 className="mt-1 text-xl font-bold text-[#131e19]">
+            <h2 className="mt-1 text-xl font-bold text-neutral">
               {flight.flightNumber}
             </h2>
           </div>
@@ -522,64 +481,90 @@ function FlightDetailsModal({ flight, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-[#6f7a70] hover:bg-[#e4f1e9] hover:text-[#131e19]"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-light transition hover:bg-primary-light hover:text-neutral"
             aria-label="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="space-y-6 p-6">
-          <div className="flex items-center justify-between rounded-xl bg-[#eaf7ee] p-4">
+        <div className="space-y-5 p-5">
+          {/* Airline */}
+          <div className="flex items-center gap-4 rounded-xl bg-primary-light p-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white">
+              <Plane size={22} />
+            </div>
+
             <div>
-              <p className="text-xs text-[#6f7a70]">
-                Airline
+              <p className="text-sm font-bold text-neutral">
+                {flight.airlineName}
               </p>
 
-              <p className="mt-1 font-semibold text-[#131e19]">
-                {flight.airlineName}
+              <p className="text-xs text-neutral-light">
+                {flight.airlineCode} ·{" "}
+                {flight.flightNumber}
               </p>
             </div>
 
-            <StatusBadge status={flight.status} />
+            <span
+              className={`ml-auto aero-status ${getStatusClasses(
+                flight.status
+              )}`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${getStatusDot(
+                  flight.status
+                )}`}
+              />
+
+              {flight.status}
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Route */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <DetailItem
               label="Destination"
-              value={`${flight.destinationName}${
-                flight.destinationCode !== "—"
-                  ? ` (${flight.destinationCode})`
-                  : ""
-              }`}
+              value={flight.airportName}
+            />
+
+            <DetailItem
+              label="Airport Code"
+              value={flight.airportCode}
             />
 
             <DetailItem
               label="Country"
-              value={
-                flight.destinationCountry || "—"
-              }
+              value={flight.country}
             />
 
             <DetailItem
-              label="Scheduled departure"
+              label="Scheduled"
               value={formatDateTime(
                 flight.scheduled
               )}
             />
 
             <DetailItem
-              label="Estimated departure"
+              label="Estimated"
               value={formatDateTime(
                 flight.estimated
               )}
             />
 
             <DetailItem
-              label="Actual departure"
-              value={formatDateTime(
-                flight.actual
-              )}
+              label="Actual"
+              value={formatDateTime(flight.actual)}
+            />
+
+            <DetailItem
+              label="Terminal"
+              value={flight.terminal}
+            />
+
+            <DetailItem
+              label="Gate"
+              value={flight.gate}
             />
 
             <DetailItem
@@ -589,166 +574,160 @@ function FlightDetailsModal({ flight, onClose }) {
 
             <DetailItem
               label="Registration"
-              value={flight.registration}
-            />
-
-            <DetailItem
-              label="Terminal"
-              value={flight.terminal || "—"}
-            />
-
-            <DetailItem
-              label="Gate"
-              value={flight.gate || "—"}
-            />
-
-            <DetailItem
-              label="Departure airport"
-              value={`${flight.departureAirport} (${flight.departureCode})`}
+              value={flight.aircraftRegistration}
             />
 
             <DetailItem
               label="Delay"
               value={
-                flight.delay !== null &&
-                flight.delay !== undefined
+                flight.delay
                   ? `${flight.delay} minutes`
-                  : "—"
+                  : "No delay information"
               }
             />
 
             <DetailItem
-              label="Observed time"
-              value={formatDateTime(
-                departureDate
-              )}
+              label="Baggage"
+              value={
+                flight.baggage || "Not available"
+              }
             />
           </div>
 
-          <div className="rounded-xl border border-[#d9e6dd] bg-[#f7f9fb] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#6f7a70]">
-              Data source
-            </p>
+          {/* Source */}
+          <div className="rounded-xl border border-border bg-background p-4">
+            <div className="flex items-start gap-3">
+              <ExternalLink
+                size={17}
+                className="mt-0.5 text-primary"
+              />
 
-            <p className="mt-1 text-sm text-[#3f4941]">
-              Live flight data returned by
-              AviationStack for {AIRPORT_CODE}.
-            </p>
+              <div>
+                <p className="text-sm font-semibold text-neutral">
+                  Live Aviation Data
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-neutral-light">
+                  Flight information is provided by
+                  the configured aviation data service
+                  and may change as the airline updates
+                  its operational information.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
+
+/* =========================================================
+   DETAIL ITEM
+========================================================= */
 
 function DetailItem({ label, value }) {
   return (
-    <div className="rounded-lg border border-[#d9e6dd] p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6f7a70]">
+    <div className="rounded-xl border border-border p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-light">
         {label}
       </p>
 
-      <p className="mt-1 break-words text-sm font-semibold text-[#131e19]">
-        {value || "—"}
+      <p className="mt-1 text-sm font-semibold text-neutral">
+        {value}
       </p>
     </div>
-  )
+  );
 }
 
-export default function Departures() {
-  const [flights, setFlights] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [lastSyncedAt, setLastSyncedAt] =
-    useState(null)
+/* =========================================================
+   MAIN DASHBOARD
+========================================================= */
 
-  const [search, setSearch] = useState("")
-  const [terminal, setTerminal] =
-    useState("all")
-  const [status, setStatus] = useState("all")
+export default function Dashboard() {
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [terminal, setTerminal] = useState("all");
+  const [status, setStatus] = useState("all");
   const [timeWindow, setTimeWindow] =
-    useState("all")
+    useState("all");
 
-  const [page, setPage] = useState(1)
-  const [countdown, setCountdown] = useState(
-    AUTO_REFRESH_SECONDS
-  )
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [lastUpdated, setLastUpdated] =
+    useState(null);
+
+  const [countdown, setCountdown] =
+    useState(AUTO_REFRESH_SECONDS);
 
   const [selectedFlight, setSelectedFlight] =
-    useState(null)
+    useState(null);
 
-  const loadDepartures = useCallback(
-    async ({ silent = false } = {}) => {
-      if (!silent) {
-        setLoading(true)
-      }
+  const loadFlights = useCallback(async () => {
+    try {
+      setError("");
 
-      setError("")
+      const response = await getLiveFlights(
+        AIRPORT_CODE
+      );
 
-      try {
-        const response = await getLiveFlights({
-          depIata: AIRPORT_CODE,
-          limit: 100,
-        })
+      const data = Array.isArray(response)
+        ? response
+        : response?.data || response?.results || [];
 
-        const data = Array.isArray(response?.data)
-          ? response.data
-          : []
+      const normalized = data.map(
+        normalizeFlight
+      );
 
-        const normalized = data.map(
-          normalizeFlight
-        )
+      setFlights(normalized);
+      setLastUpdated(new Date());
+      setCountdown(AUTO_REFRESH_SECONDS);
+    } catch (err) {
+      console.error(err);
 
-        setFlights(normalized)
-        setLastSyncedAt(new Date())
-        setCountdown(AUTO_REFRESH_SECONDS)
-        setPage(1)
-      } catch (requestError) {
-        console.error(
-          "Departures request failed:",
-          requestError
-        )
-
-        setError(
-          requestError?.message ||
-            "Unable to load departure flights."
-        )
-
-        if (!silent) {
-          setFlights([])
-        }
-      } finally {
-        if (!silent) {
-          setLoading(false)
-        }
-      }
-    },
-    []
-  )
+      setError(
+        err?.message ||
+          "Unable to load live flight information."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadDepartures()
-  }, [loadDepartures])
+    loadFlights();
+  }, [loadFlights]);
 
+  /* Auto refresh */
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const interval = setInterval(() => {
+      loadFlights();
+    }, AUTO_REFRESH_SECONDS * 1000);
+
+    return () => clearInterval(interval);
+  }, [loadFlights]);
+
+  /* Countdown */
+  useEffect(() => {
+    const interval = setInterval(() => {
       setCountdown((current) => {
         if (current <= 1) {
-          loadDepartures({ silent: true })
-          return AUTO_REFRESH_SECONDS
+          return AUTO_REFRESH_SECONDS;
         }
 
-        return current - 1
-      })
-    }, 1000)
+        return current - 1;
+      });
+    }, 1000);
 
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [loadDepartures])
+    return () => clearInterval(interval);
+  }, []);
 
+  /* Filter */
   const filteredFlights = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return flights.filter((flight) => {
       const matchesSearch =
@@ -756,155 +735,164 @@ export default function Departures() {
         [
           flight.flightNumber,
           flight.airlineName,
-          flight.airlineCode,
-          flight.destinationName,
-          flight.destinationCode,
-          flight.destinationCountry,
+          flight.airportName,
+          flight.airportCode,
+          flight.country,
           flight.aircraftModel,
-          flight.registration,
-          flight.terminal,
-          flight.gate,
+          flight.aircraftRegistration,
         ]
-          .filter(Boolean)
           .join(" ")
           .toLowerCase()
-          .includes(query)
+          .includes(query);
 
       const matchesTerminal =
         terminal === "all" ||
-        String(flight.terminal || "").toUpperCase() ===
-          terminal
-
-      const statusKey = getStatusKey(
-        flight.status
-      )
+        flight.terminal === terminal;
 
       const matchesStatus =
         status === "all" ||
-        statusKey === status
+        flight.status === status;
 
       const matchesTime =
         timeWindow === "all" ||
         getTimeWindow(flight.scheduled) ===
-          timeWindow
+          timeWindow;
 
       return (
         matchesSearch &&
         matchesTerminal &&
         matchesStatus &&
         matchesTime
-      )
-    })
+      );
+    });
   }, [
     flights,
     search,
     terminal,
     status,
     timeWindow,
-  ])
+  ]);
 
+  /* Pagination */
   const totalPages = Math.max(
     1,
     Math.ceil(
       filteredFlights.length / ITEMS_PER_PAGE
     )
-  )
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages)
-    }
-  }, [page, totalPages])
+  );
 
   const paginatedFlights = useMemo(() => {
     const start =
-      (page - 1) * ITEMS_PER_PAGE
+      (currentPage - 1) * ITEMS_PER_PAGE;
 
     return filteredFlights.slice(
       start,
       start + ITEMS_PER_PAGE
-    )
-  }, [filteredFlights, page])
+    );
+  }, [filteredFlights, currentPage]);
 
-  const metrics = useMemo(() => {
-    const total = flights.length
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
-    const delayed = flights.filter(
-      (flight) =>
-        getStatusKey(flight.status) === "delayed"
-    ).length
-
+  /* Statistics */
+  const statistics = useMemo(() => {
     const active = flights.filter(
-      (flight) =>
-        getStatusKey(flight.status) === "active"
-    ).length
+      (flight) => flight.status === "active"
+    ).length;
 
     const scheduled = flights.filter(
-      (flight) =>
-        getStatusKey(flight.status) === "scheduled"
-    ).length
+      (flight) => flight.status === "scheduled"
+    ).length;
+
+    const delayed = flights.filter(
+      (flight) => flight.status === "delayed"
+    ).length;
+
+    const landed = flights.filter(
+      (flight) => flight.status === "landed"
+    ).length;
 
     const cancelled = flights.filter(
-      (flight) =>
-        getStatusKey(flight.status) ===
-        "cancelled"
-    ).length
+      (flight) => flight.status === "cancelled"
+    ).length;
 
     return {
-      total,
-      delayed,
+      total: flights.length,
       active,
       scheduled,
+      delayed,
+      landed,
       cancelled,
-    }
-  }, [flights])
+    };
+  }, [flights]);
 
+  /* Terminal statistics */
+  const terminalStatistics = useMemo(() => {
+    const t1 = flights.filter(
+      (flight) => flight.terminal === "T1"
+    ).length;
+
+    const t2 = flights.filter(
+      (flight) => flight.terminal === "T2"
+    ).length;
+
+    const unknown = flights.filter(
+      (flight) =>
+        !["T1", "T2"].includes(flight.terminal)
+    ).length;
+
+    return {
+      t1,
+      t2,
+      unknown,
+    };
+  }, [flights]);
+
+  /* Reset filters */
   const resetFilters = () => {
-    setSearch("")
-    setTerminal("all")
-    setStatus("all")
-    setTimeWindow("all")
-    setPage(1)
-  }
+    setSearch("");
+    setTerminal("all");
+    setStatus("all");
+    setTimeWindow("all");
+    setCurrentPage(1);
+  };
 
-  const handleExportCsv = () => {
-    if (!filteredFlights.length) return
-
+  /* CSV export */
+  const exportCsv = () => {
     const headers = [
       "Flight",
       "Airline",
       "Destination",
-      "Destination IATA",
       "Country",
-      "Aircraft",
-      "Registration",
+      "Status",
       "Scheduled",
       "Estimated",
       "Actual",
       "Terminal",
       "Gate",
-      "Status",
-      "Delay Minutes",
-    ]
+      "Aircraft",
+      "Registration",
+    ];
 
     const rows = filteredFlights.map(
       (flight) => [
         flight.flightNumber,
         flight.airlineName,
-        flight.destinationName,
-        flight.destinationCode,
-        flight.destinationCountry,
-        flight.aircraftModel,
-        flight.registration,
-        flight.scheduled || "",
-        flight.estimated || "",
-        flight.actual || "",
-        flight.terminal || "",
-        flight.gate || "",
+        flight.airportName,
+        flight.country,
         flight.status,
-        flight.delay ?? "",
+        formatDateTime(flight.scheduled),
+        formatDateTime(flight.estimated),
+        formatDateTime(flight.actual),
+        flight.terminal,
+        flight.gate,
+        flight.aircraftModel,
+        flight.aircraftRegistration,
       ]
-    )
+    );
 
     const csv = [
       headers,
@@ -912,985 +900,954 @@ export default function Departures() {
     ]
       .map((row) =>
         row
-          .map((value) => {
-            const stringValue = String(
-              value ?? ""
-            )
-
-            return `"${stringValue.replaceAll(
-              '"',
+          .map((value) =>
+            `"${String(value ?? "").replace(
+              /"/g,
               '""'
             )}"`
-          })
+          )
           .join(",")
       )
-      .join("\n")
+      .join("\n");
 
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8;",
-    })
+    });
 
-    const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob);
 
-    const anchor =
-      document.createElement("a")
+    const link = document.createElement("a");
 
-    anchor.href = url
-    anchor.download = `departures-${AIRPORT_CODE}-${new Date()
+    link.href = url;
+    link.download = `ethioflight-departures-${new Date()
       .toISOString()
-      .slice(0, 10)}.csv`
+      .slice(0, 10)}.csv`;
 
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-    URL.revokeObjectURL(url)
-  }
+    URL.revokeObjectURL(url);
+  };
 
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const visibleStart =
+  const startItem =
     filteredFlights.length === 0
       ? 0
-      : (page - 1) * ITEMS_PER_PAGE + 1
+      : (currentPage - 1) * ITEMS_PER_PAGE + 1;
 
-  const visibleEnd = Math.min(
-    page * ITEMS_PER_PAGE,
+  const endItem = Math.min(
+    currentPage * ITEMS_PER_PAGE,
     filteredFlights.length
-  )
+  );
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb] text-[#131e19]">
-      {/* Airport operational header */}
-      <section className="border-b border-[#d9e6dd] bg-white px-4 py-4 shadow-sm sm:px-6 xl:px-8">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="min-h-screen bg-background text-neutral">
+      {/* =====================================================
+          AIRPORT HEADER
+      ===================================================== */}
+
+      <section className="border-b border-border bg-surface px-4 py-4 shadow-sm sm:px-6">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#005932] text-white shadow-sm">
-              <span className="text-sm font-bold tracking-wider">
-                {AIRPORT_CODE}
-              </span>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-dark text-white shadow-sm">
+              <Plane size={22} />
             </div>
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-[#131e19]">
+                <h1 className="text-lg font-bold text-neutral sm:text-xl">
                   {AIRPORT_NAME}
                 </h1>
 
-                <span className="rounded-full bg-[#d9e6dd] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#3f4941]">
-                  {AIRPORT_ICAO} /{" "}
+                <span className="rounded-full bg-primary-light px-2.5 py-1 text-[10px] font-bold text-primary">
                   {AIRPORT_CODE}
                 </span>
 
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#005932] opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#005932]" />
+                <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-semibold text-neutral-light">
+                  {AIRPORT_ICAO}
                 </span>
               </div>
 
-              <p className="mt-0.5 text-xs text-[#6f7a70]">
-                Departure Operations ·{" "}
+              <p className="mt-1 text-xs text-neutral-light">
                 {AIRPORT_LOCATION}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg bg-[#eaf7ee] px-3 py-2">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Station Clock */}
+            <div className="flex items-center gap-2 rounded-lg bg-primary-light px-3 py-2">
               <Timer
-                size={17}
-                className="text-[#005932]"
+                size={16}
+                className="text-primary"
               />
 
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6f7a70]">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-light">
                   Station Clock
                 </p>
 
-                <p className="font-mono text-xs font-semibold text-[#131e19]">
-                  {new Date().toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: false,
-                    }
-                  )}
+                <p className="text-sm font-bold text-neutral">
+                  {new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-[#becabe] bg-[#eaf7ee] px-3 py-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#087443]" />
+            {/* Live status */}
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-primary-light px-3 py-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success" />
+              </span>
 
-              <span className="text-[11px] font-semibold text-[#087443]">
-                AviationStack Connected
+              <span className="text-xs font-semibold text-primary">
+                Live
               </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main */}
-      <main className="px-4 py-5 sm:px-6 xl:px-8">
-        <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-5">
-          {/* Data-backed KPI cards */}
-          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
-              label="Departures Returned"
-              value={metrics.total}
-              description="Current AviationStack response"
-              icon={Plane}
-            />
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
 
-            <MetricCard
-              label="Active"
-              value={metrics.active}
-              description="Active flight records"
-              icon={Activity}
-            />
+      <main className="mx-auto max-w-[1600px] space-y-5 px-4 py-5 sm:px-6">
+        {/* ===================================================
+            KPI CARDS
+        =================================================== */}
 
-            <MetricCard
-              label="Scheduled"
-              value={metrics.scheduled}
-              description="Scheduled departure records"
-              icon={Timer}
-            />
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <MetricCard
+            icon={Plane}
+            label="Total Flights"
+            value={statistics.total}
+            description="Today's departures"
+          />
 
-            <MetricCard
-              label="Delayed"
-              value={metrics.delayed}
-              description={`${metrics.cancelled} cancelled`}
-              icon={RefreshCw}
-              iconClass={
-                metrics.delayed > 0
-                  ? "text-[#7a5900]"
-                  : "text-[#005932]"
-              }
-            />
-          </section>
+          <MetricCard
+            icon={PlaneTakeoff}
+            label="Active"
+            value={statistics.active}
+            description="Currently active"
+            iconClass="text-success"
+          />
 
-          {/* Error */}
-          {error && (
-            <div className="flex flex-col gap-3 rounded-xl border border-[#ffdad6] bg-[#fff5f4] p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold text-[#93000a]">
-                  Unable to load departure data
-                </p>
+          <MetricCard
+            icon={Clock3}
+            label="Scheduled"
+            value={statistics.scheduled}
+            description="Upcoming flights"
+            iconClass="text-info"
+          />
 
-                <p className="mt-1 text-sm text-[#93000a]">
-                  {error}
-                </p>
+          <MetricCard
+            icon={AlertCircle}
+            label="Delayed"
+            value={statistics.delayed}
+            description="Delayed flights"
+            iconClass="text-warning"
+          />
+
+          <MetricCard
+            icon={PlaneLanding}
+            label="Landed"
+            value={statistics.landed}
+            description="Completed flights"
+            iconClass="text-primary"
+          />
+        </section>
+
+        {/* ===================================================
+            ERROR
+        =================================================== */}
+
+        {error && (
+          <section className="rounded-xl border border-danger/30 bg-danger/10 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3">
+                <AlertCircle
+                  size={20}
+                  className="mt-0.5 shrink-0 text-danger"
+                />
+
+                <div>
+                  <p className="text-sm font-bold text-danger">
+                    Unable to load flight data
+                  </p>
+
+                  <p className="mt-1 text-xs text-danger/80">
+                    {error}
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  loadDepartures()
-                }
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#005932] px-4 py-2 text-sm font-medium text-white hover:bg-[#087443]"
+                onClick={loadFlights}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-dark px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={14} />
                 Retry
               </button>
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Filter control station */}
-          <section className="rounded-xl bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                {/* Search */}
-                <div className="relative min-w-0 flex-1 xl:max-w-xl">
-                  <Search
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6f7a70]"
-                  />
+        {/* ===================================================
+            FILTER STATION
+        =================================================== */}
 
-                  <input
-                    value={search}
-                    onChange={(event) => {
-                      setSearch(
-                        event.target.value
-                      )
-                      setPage(1)
-                    }}
-                    className="h-10 w-full rounded-lg bg-[#eaf7ee] pl-10 pr-4 text-sm text-[#131e19] outline-none transition focus:ring-2 focus:ring-[#005932]/20"
-                    placeholder="Search flight number, city, IATA code, or carrier..."
-                  />
-                </div>
+        <section className="rounded-xl border border-border bg-surface p-4 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              {/* Search */}
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-light"
+                />
 
-                {/* Terminal filters */}
-                <div className="flex flex-wrap items-center rounded-lg bg-[#e4f1e9] p-1">
-                  {TERMINALS.map((item) => {
-                    const active =
-                      terminal === item.value
-
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => {
-                          setTerminal(
-                            item.value
-                          )
-                          setPage(1)
-                        }}
-                        className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
-                          active
-                            ? "bg-white text-[#131e19] shadow-sm"
-                            : "text-[#3f4941] hover:text-[#131e19]"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* Refresh */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 rounded-lg bg-[#eaf7ee] px-3 py-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#005932] opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#005932]" />
-                    </span>
-
-                    <span className="text-[11px] text-[#3f4941]">
-                      Auto-sync in{" "}
-                      <strong className="font-mono text-[#131e19]">
-                        {countdown}s
-                      </strong>
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      loadDepartures()
-                    }
-                    disabled={loading}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#eaf7ee] px-3.5 text-xs font-semibold text-[#131e19] shadow-sm hover:bg-[#e4f1e9] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RefreshCw
-                      size={17}
-                      className={
-                        loading
-                          ? "animate-spin"
-                          : ""
-                      }
-                    />
-
-                    Sync
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search flight, airline, destination, aircraft..."
+                  className="h-10 w-full rounded-lg border border-border bg-primary-light pl-9 pr-3 text-sm text-neutral outline-none placeholder:text-neutral-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
+                />
               </div>
 
-              {/* Status + time window */}
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-wrap items-center gap-1 rounded-lg bg-[#e4f1e9] p-1">
+              {/* Terminal */}
+              <div className="flex flex-wrap items-center gap-1 rounded-lg bg-primary-light p-1">
+                {TERMINALS.map((item) => {
+                  const active =
+                    terminal === item.value;
+
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        setTerminal(item.value);
+                        setCurrentPage(1);
+                      }}
+                      className={`rounded-md px-3 py-2 text-xs font-semibold transition ${
+                        active
+                          ? "bg-surface text-neutral shadow-sm"
+                          : "text-neutral-light hover:text-neutral"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Refresh */}
+              <div className="flex items-center gap-2 rounded-lg bg-primary-light px-3 py-2">
+                <span className="h-2 w-2 rounded-full bg-success" />
+
+                <span className="text-xs text-neutral-light">
+                  Next sync
+                </span>
+
+                <span className="text-xs font-bold text-neutral">
+                  {countdown}s
+                </span>
+
+                <button
+                  type="button"
+                  onClick={loadFlights}
+                  className="ml-1 rounded-md p-1.5 text-neutral transition hover:bg-surface hover:text-primary"
+                  title="Refresh now"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+
+              {/* Export */}
+              <button
+                type="button"
+                onClick={exportCsv}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-neutral transition hover:border-primary hover:bg-primary-light hover:text-primary"
+              >
+                <Download size={14} />
+                Export
+              </button>
+            </div>
+
+            {/* Status + Time */}
+            <div className="flex flex-col gap-3 border-t border-divider pt-3 xl:flex-row xl:items-center xl:justify-between">
+              {/* Status */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 rounded-lg bg-primary-light p-1">
                   {STATUS_FILTERS.map((item) => {
                     const active =
-                      status === item.value
+                      status === item.value;
 
                     return (
                       <button
                         key={item.value}
                         type="button"
                         onClick={() => {
-                          setStatus(
-                            item.value
-                          )
-                          setPage(1)
+                          setStatus(item.value);
+                          setCurrentPage(1);
                         }}
-                        className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                           active
-                            ? "bg-white text-[#131e19] shadow-sm"
-                            : "text-[#3f4941] hover:text-[#131e19]"
+                            ? "bg-surface text-neutral shadow-sm"
+                            : "text-neutral-light hover:text-neutral"
                         }`}
                       >
                         {item.label}
                       </button>
-                    )
+                    );
                   })}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6f7a70]">
-                    Window:
-                  </span>
-
-                  {TIME_WINDOWS.map((item) => {
-                    const active =
-                      timeWindow === item.value
-
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => {
-                          setTimeWindow(
-                            item.value
-                          )
-                          setPage(1)
-                        }}
-                        className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
-                          active
-                            ? "bg-[#005932] text-white"
-                            : "bg-[#eaf7ee] text-[#3f4941] hover:bg-[#e4f1e9]"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    )
-                  })}
+                <div className="hidden items-center gap-2 text-xs text-neutral-light sm:flex">
+                  <Filter size={14} />
+                  Filters
                 </div>
               </div>
-            </div>
-          </section>
 
-          {/* Departures matrix */}
-          <section className="overflow-hidden rounded-xl bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1250px] border-collapse text-left">
-                <thead>
-                  <tr className="h-10 bg-[#eaf7ee] text-[11px] uppercase tracking-wider text-[#3f4941]">
-                    <th className="px-4 py-2 font-semibold">
-                      Flight
-                    </th>
-
-                    <th className="px-4 py-2 font-semibold">
-                      Carrier
-                    </th>
-
-                    <th className="px-4 py-2 font-semibold">
-                      Destination
-                    </th>
-
-                    <th className="px-4 py-2 font-semibold">
-                      Equipment / Reg
-                    </th>
-
-                    <th className="px-4 py-2 text-right font-semibold">
-                      Scheduled
-                    </th>
-
-                    <th className="px-4 py-2 text-right font-semibold">
-                      Estimate / Actual
-                    </th>
-
-                    <th className="px-4 py-2 text-center font-semibold">
-                      Terminal · Gate
-                    </th>
-
-                    <th className="px-4 py-2 font-semibold">
-                      Check-In
-                    </th>
-
-                    <th className="px-4 py-2 font-semibold">
-                      Status
-                    </th>
-
-                    <th className="px-4 py-2 text-right font-semibold">
-                      Telemetry
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-[#e4f1e9]">
-                  {loading ? (
-                    <LoadingRows />
-                  ) : paginatedFlights.length === 0 ? (
-                    <EmptyState
-                      hasFilters={
-                        Boolean(search) ||
-                        terminal !== "all" ||
-                        status !== "all" ||
-                        timeWindow !== "all"
-                      }
-                      onReset={resetFilters}
-                    />
-                  ) : (
-                    paginatedFlights.map(
-                      (flight) => {
-                        const displayedTime =
-                          flight.actual ||
-                          flight.estimated
-
-                        const hasDelay =
-                          flight.delay !== null &&
-                          flight.delay !== undefined &&
-                          Number(flight.delay) > 0
-
-                        return (
-                          <tr
-                            key={flight.id}
-                            className="group h-16 transition-colors hover:bg-[#eaf7ee]/60"
-                          >
-                            {/* Flight */}
-                            <td className="px-4 py-2">
-                              <span className="font-mono text-sm font-bold text-[#005932]">
-                                {flight.flightNumber}
-                              </span>
-                            </td>
-
-                            {/* Airline */}
-                            <td className="px-4 py-2">
-                              <div className="flex items-center gap-2.5">
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#087443] text-[9px] font-bold text-white">
-                                  {flight.airlineCode?.slice(
-                                    0,
-                                    3
-                                  )}
-                                </div>
-
-                                <span className="max-w-[150px] truncate text-sm font-medium text-[#131e19]">
-                                  {
-                                    flight.airlineName
-                                  }
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Destination */}
-                            <td className="px-4 py-2">
-                              <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-sm font-semibold text-[#131e19]">
-                                    {
-                                      flight.destinationName
-                                    }
-                                  </span>
-
-                                  {flight.destinationCode !==
-                                    "—" && (
-                                    <span className="rounded bg-[#d9e6dd] px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#3f4941]">
-                                      {
-                                        flight.destinationCode
-                                      }
-                                    </span>
-                                  )}
-                                </div>
-
-                                {flight.destinationCountry && (
-                                  <span className="text-xs text-[#6f7a70]">
-                                    {
-                                      flight.destinationCountry
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Equipment */}
-                            <td className="px-4 py-2">
-                              <div className="flex flex-col font-mono text-xs">
-                                <span className="font-semibold text-[#131e19]">
-                                  {
-                                    flight.aircraftModel
-                                  }
-                                </span>
-
-                                <span className="text-[11px] text-[#6f7a70]">
-                                  {
-                                    flight.registration
-                                  }
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Scheduled */}
-                            <td className="px-4 py-2 text-right">
-                              <span className="font-mono text-sm font-semibold text-[#131e19]">
-                                {formatTime(
-                                  flight.scheduled
-                                )}
-                              </span>
-                            </td>
-
-                            {/* Estimate / Actual */}
-                            <td className="px-4 py-2 text-right">
-                              <div className="flex flex-col items-end">
-                                <span
-                                  className={`font-mono text-sm font-semibold ${
-                                    hasDelay
-                                      ? "text-[#7a5900]"
-                                      : "text-[#005932]"
-                                  }`}
-                                >
-                                  {formatTime(
-                                    displayedTime
-                                  )}
-                                </span>
-
-                                <span
-                                  className={`text-[11px] font-medium ${
-                                    hasDelay
-                                      ? "text-[#7a5900]"
-                                      : "text-[#6f7a70]"
-                                  }`}
-                                >
-                                  {flight.actual
-                                    ? "Actual"
-                                    : flight.estimated
-                                      ? "Estimated"
-                                      : "—"}
-
-                                  {hasDelay &&
-                                    ` · +${flight.delay}m`}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Terminal / Gate */}
-                            <td className="px-4 py-2 text-center">
-                              <div className="inline-flex items-center gap-1.5 rounded-lg bg-[#e4f1e9] px-2.5 py-1">
-                                <span className="text-[11px] font-medium text-[#6f7a70]">
-                                  {flight.terminal ||
-                                    "—"}
-                                </span>
-
-                                <span className="text-[#6f7a70]">
-                                  |
-                                </span>
-
-                                <span className="font-mono text-xs font-bold text-[#131e19]">
-                                  {flight.gate ||
-                                    "—"}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Check-in */}
-                            <td className="px-4 py-2">
-                              <span className="rounded bg-[#f7f9fb] px-2 py-1 font-mono text-[11px] font-medium text-[#6f7a70]">
-                                —
-                              </span>
-                            </td>
-
-                            {/* Status */}
-                            <td className="px-4 py-2">
-                              <StatusBadge
-                                status={
-                                  flight.status
-                                }
-                              />
-                            </td>
-
-                            {/* Action */}
-                            <td className="px-4 py-2 text-right">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedFlight(
-                                    flight
-                                  )
-                                }
-                                className="rounded bg-[#eaf7ee] px-3 py-1.5 text-[11px] font-semibold text-[#131e19] shadow-sm transition hover:bg-[#005932] hover:text-white"
-                              >
-                                View Flight
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      }
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex flex-col gap-4 border-t border-[#d9e6dd] bg-[#eaf7ee] p-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#6f7a70]">
-                <span>
-                  Showing{" "}
-                  <strong className="font-mono font-bold text-[#131e19]">
-                    {visibleStart}
-                    {filteredFlights.length
-                      ? `–${visibleEnd}`
-                      : ""}
-                  </strong>{" "}
-                  of{" "}
-                  <strong className="font-mono font-bold text-[#131e19]">
-                    {filteredFlights.length}
-                  </strong>{" "}
-                  departures
-                </span>
-
-                <span className="hidden text-[#6f7a70] sm:inline">
-                  ·
-                </span>
-
-                <span className="flex items-center gap-1.5">
-                  <Activity
-                    size={14}
-                    className="text-[#005932]"
-                  />
-
-                  Feed Sync:{" "}
-                  <span className="font-mono text-[#131e19]">
-                    {lastSyncedAt
-                      ? lastSyncedAt.toLocaleTimeString(
-                          [],
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                            hour12: false,
-                          }
-                        )
-                      : "—"}
-                  </span>
-                </span>
-              </div>
-
+              {/* Time */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="mr-2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={handleExportCsv}
-                    disabled={
-                      !filteredFlights.length
-                    }
-                    className="rounded-lg p-2 text-[#6f7a70] hover:bg-white hover:text-[#131e19] disabled:opacity-40"
-                    title="Export CSV"
-                  >
-                    <Download size={17} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="rounded-lg p-2 text-[#6f7a70] hover:bg-white hover:text-[#131e19]"
-                    title="Print flight board"
-                  >
-                    <Printer size={17} />
-                  </button>
-                </div>
-
-                <span className="mr-1 font-mono text-[11px] text-[#6f7a70]">
-                  Page {page} of{" "}
-                  {totalPages}
+                <span className="text-xs font-semibold text-neutral-light">
+                  Time:
                 </span>
 
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() =>
-                    setPage((value) =>
-                      Math.max(1, value - 1)
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#6f7a70] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft size={17} />
-                </button>
+                {TIME_WINDOWS.map((item) => {
+                  const active =
+                    timeWindow === item.value;
 
-                {Array.from(
-                  {
-                    length: Math.min(
-                      totalPages,
-                      5
-                    ),
-                  },
-                  (_, index) => {
-                    let pageNumber
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        setTimeWindow(item.value);
+                        setCurrentPage(1);
+                      }}
+                      className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                        active
+                          ? "bg-primary-dark text-white"
+                          : "bg-primary-light text-neutral-light hover:bg-primary-light hover:text-neutral"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
 
-                    if (totalPages <= 5) {
-                      pageNumber = index + 1
-                    } else if (page <= 3) {
-                      pageNumber = index + 1
-                    } else if (
-                      page >=
-                      totalPages - 2
-                    ) {
-                      pageNumber =
-                        totalPages - 4 + index
-                    } else {
-                      pageNumber =
-                        page - 2 + index
-                    }
+        {/* ===================================================
+            DEPARTURES TABLE
+        =================================================== */}
+
+        <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-bold text-neutral">
+                Departures
+              </h2>
+
+              <p className="mt-0.5 text-xs text-neutral-light">
+                Live flight information from{" "}
+                {AIRPORT_CODE}
+              </p>
+            </div>
+
+            {lastUpdated && (
+              <div className="text-xs text-neutral-light">
+                Updated{" "}
+                {lastUpdated.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-[1100px] w-full">
+              <thead>
+                <tr className="bg-primary-light text-left">
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Flight
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Airline
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Destination
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Aircraft
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Schedule
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Terminal
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Status
+                  </th>
+
+                  <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-neutral-light">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-divider">
+                {loading ? (
+                  <LoadingRows />
+                ) : paginatedFlights.length === 0 ? (
+                  <tr>
+                    <td colSpan={8}>
+                      <EmptyState
+                        onReset={resetFilters}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedFlights.map((flight) => {
+                    const scheduleTime =
+                      formatTime(
+                        flight.scheduled
+                      );
+
+                    const estimatedTime =
+                      formatTime(
+                        flight.estimated
+                      );
+
+                    const actualTime =
+                      formatTime(flight.actual);
+
+                    const hasActual =
+                      Boolean(flight.actual);
+
+                    const hasEstimate =
+                      Boolean(flight.estimated);
 
                     return (
-                      <button
-                        key={pageNumber}
-                        type="button"
-                        onClick={() =>
-                          setPage(pageNumber)
-                        }
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg font-mono text-[11px] font-semibold shadow-sm ${
-                          page === pageNumber
-                            ? "bg-[#005932] text-white"
-                            : "bg-white text-[#131e19] hover:bg-[#e4f1e9]"
-                        }`}
+                      <tr
+                        key={flight._id}
+                        className="group transition hover:bg-primary-light/60"
                       >
-                        {pageNumber}
-                      </button>
-                    )
-                  }
-                )}
+                        {/* Flight */}
+                        <td className="px-4 py-4 align-top">
+                          <div>
+                            <p className="text-sm font-bold text-primary-dark">
+                              {flight.flightNumber}
+                            </p>
 
-                <button
-                  type="button"
-                  disabled={
-                    page >= totalPages
-                  }
-                  onClick={() =>
-                    setPage((value) =>
+                            <p className="mt-1 text-[10px] text-neutral-light">
+                              {flight.airlineCode}
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Airline */}
+                        <td className="px-4 py-4 align-top">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-bold text-white">
+                              {flight.airlineCode}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="max-w-[150px] truncate text-xs font-semibold text-neutral">
+                                {flight.airlineName}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Destination */}
+                        <td className="px-4 py-4 align-top">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="max-w-[170px] truncate text-sm font-semibold text-neutral">
+                                {flight.airportName}
+                              </p>
+
+                              <span className="rounded-md bg-primary-light px-1.5 py-0.5 text-[9px] font-bold text-neutral-light">
+                                {flight.airportCode}
+                              </span>
+                            </div>
+
+                            <p className="mt-1 text-[10px] text-neutral-light">
+                              {flight.country}
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Aircraft */}
+                        <td className="px-4 py-4 align-top">
+                          <div>
+                            <p className="text-xs font-semibold text-neutral">
+                              {flight.aircraftModel}
+                            </p>
+
+                            <p className="mt-1 text-[10px] text-neutral-light">
+                              {flight.aircraftRegistration}
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Schedule */}
+                        <td className="px-4 py-4 align-top">
+                          <div>
+                            <p className="text-sm font-bold text-neutral">
+                              {scheduleTime}
+                            </p>
+
+                            {hasActual ? (
+                              <p className="mt-1 text-[10px] font-semibold text-success">
+                                Actual{" "}
+                                {actualTime}
+                              </p>
+                            ) : hasEstimate ? (
+                              <p
+                                className={`mt-1 text-[10px] font-semibold ${
+                                  flight.delay
+                                    ? "text-warning"
+                                    : "text-success"
+                                }`}
+                              >
+                                Est.{" "}
+                                {estimatedTime}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-[10px] text-neutral-light">
+                                No estimate
+                              </p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Terminal */}
+                        <td className="px-4 py-4 align-top">
+                          <div className="inline-flex flex-col rounded-lg bg-primary-light px-2.5 py-1.5">
+                            <span className="text-[9px] font-semibold uppercase text-neutral-light">
+                              Terminal
+                            </span>
+
+                            <span className="mt-0.5 text-xs font-bold text-neutral">
+                              {flight.terminal}
+                            </span>
+
+                            <span className="mt-0.5 text-[9px] text-neutral-light">
+                              Gate {flight.gate}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-4 align-top">
+                          <span
+                            className={`aero-status ${getStatusClasses(
+                              flight.status
+                            )}`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${getStatusDot(
+                                flight.status
+                              )}`}
+                            />
+
+                            {flight.status}
+                          </span>
+                        </td>
+
+                        {/* Action */}
+                        <td className="px-4 py-4 align-top">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedFlight(
+                                flight
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-light px-3 py-2 text-xs font-semibold text-neutral transition hover:bg-primary hover:text-white"
+                          >
+                            View
+                            <ExternalLink
+                              size={13}
+                            />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {!loading &&
+            filteredFlights.length > 0 && (
+              <div className="flex flex-col gap-3 border-t border-border bg-primary-light px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-neutral-light">
+                  Showing{" "}
+                  <span className="font-bold text-neutral">
+                    {startItem}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-bold text-neutral">
+                    {endItem}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-bold text-neutral">
+                    {filteredFlights.length}
+                  </span>{" "}
+                  flights
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() =>
+                      setCurrentPage((page) =>
+                        Math.max(1, page - 1)
+                      )
+                    }
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-neutral transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
+
+                  {Array.from(
+                    { length: totalPages },
+                    (_, index) => index + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
                       Math.min(
                         totalPages,
-                        value + 1
+                        currentPage + 2
                       )
                     )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#6f7a70] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronRight size={17} />
-                </button>
+                    .map((page) => {
+                      const active =
+                        page === currentPage;
+
+                      return (
+                        <button
+                          key={page}
+                          type="button"
+                          onClick={() =>
+                            setCurrentPage(page)
+                          }
+                          className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-xs font-semibold transition ${
+                            active
+                              ? "bg-primary-dark text-white"
+                              : "border border-border bg-surface text-neutral hover:bg-primary-light"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                  <button
+                    type="button"
+                    disabled={
+                      currentPage === totalPages
+                    }
+                    onClick={() =>
+                      setCurrentPage((page) =>
+                        Math.min(
+                          totalPages,
+                          page + 1
+                        )
+                      )
+                    }
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-neutral transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
               </div>
+            )}
+        </section>
+
+        {/* ===================================================
+            SUMMARY
+        =================================================== */}
+
+        <section className="grid gap-4 lg:grid-cols-3">
+          {/* Flight Status */}
+          <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-neutral">
+                  Flight Status
+                </h3>
+
+                <p className="mt-1 text-xs text-neutral-light">
+                  Current departure breakdown
+                </p>
+              </div>
+
+              <PlaneTakeoff
+                size={18}
+                className="text-primary"
+              />
             </div>
-          </section>
 
-          {/* Data-backed operational summary */}
-          <section className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-            <div className="rounded-xl bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#131e19]">
-                  Departure Status
-                </h2>
+            <div className="mt-5 space-y-3">
+              <SummaryProgress
+                label="Active"
+                value={statistics.active}
+                total={statistics.total}
+                icon={ArrowUp}
+                barClass="bg-success"
+              />
 
-                <Activity
-                  size={18}
-                  className="text-[#005932]"
-                />
-              </div>
+              <SummaryProgress
+                label="Scheduled"
+                value={statistics.scheduled}
+                total={statistics.total}
+                icon={Clock3}
+                barClass="bg-info"
+              />
 
-              <p className="mt-1 text-xs text-[#6f7a70]">
-                Distribution of statuses in the
-                current AviationStack response.
-              </p>
+              <SummaryProgress
+                label="Delayed"
+                value={statistics.delayed}
+                total={statistics.total}
+                icon={Clock3}
+                barClass="bg-warning"
+              />
 
-              <div className="mt-4 space-y-3">
-                <ProgressRow
-                  label="Active"
-                  value={metrics.active}
-                  total={metrics.total}
-                  className="bg-[#005932]"
-                />
-
-                <ProgressRow
-                  label="Scheduled"
-                  value={metrics.scheduled}
-                  total={metrics.total}
-                  className="bg-[#145ae2]"
-                />
-
-                <ProgressRow
-                  label="Delayed"
-                  value={metrics.delayed}
-                  total={metrics.total}
-                  className="bg-[#febf27]"
-                />
-
-                <ProgressRow
-                  label="Cancelled"
-                  value={metrics.cancelled}
-                  total={metrics.total}
-                  className="bg-[#ba1a1a]"
-                />
-              </div>
+              <SummaryProgress
+                label="Cancelled"
+                value={statistics.cancelled}
+                total={statistics.total}
+                icon={X}
+                barClass="bg-danger"
+              />
             </div>
+          </div>
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#131e19]">
+          {/* Terminal Summary */}
+          <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-neutral">
                   Terminal Distribution
-                </h2>
+                </h3>
 
-                <Plane
-                  size={18}
-                  className="text-[#005932]"
-                />
+                <p className="mt-1 text-xs text-neutral-light">
+                  Flights by terminal
+                </p>
               </div>
 
-              <p className="mt-1 text-xs text-[#6f7a70]">
-                Departure records grouped by terminal.
-              </p>
+              <Users
+                size={18}
+                className="text-primary"
+              />
+            </div>
 
-              <div className="mt-4 space-y-3">
-                <TerminalSummary
-                  terminal="T1"
-                  flights={flights}
-                />
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <TerminalSummary
+                label="T1"
+                value={terminalStatistics.t1}
+              />
 
-                <TerminalSummary
-                  terminal="T2"
-                  flights={flights}
-                />
+              <TerminalSummary
+                label="T2"
+                value={terminalStatistics.t2}
+              />
 
-                <TerminalSummary
-                  terminal="Unknown"
-                  flights={flights}
-                />
+              <TerminalSummary
+                label="Other"
+                value={terminalStatistics.unknown}
+              />
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-neutral">
+                  System Status
+                </h3>
+
+                <p className="mt-1 text-xs text-neutral-light">
+                  EthioFlight service information
+                </p>
+              </div>
+
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                <span className="h-2.5 w-2.5 rounded-full bg-success" />
               </div>
             </div>
 
-            <div className="rounded-xl bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-[#131e19]">
-                  Data Availability
-                </h2>
+            <div className="mt-5 space-y-2">
+              <AvailabilityRow
+                label="Flight Data"
+                value={
+                  loading ? "Loading" : "Connected"
+                }
+                active={!loading && !error}
+              />
 
-                <Timer
-                  size={18}
-                  className="text-[#005932]"
-                />
-              </div>
+              <AvailabilityRow
+                label="Airport"
+                value={AIRPORT_CODE}
+                active
+              />
 
-              <p className="mt-1 text-xs text-[#6f7a70]">
-                Fields shown here are based only on
-                the returned flight records.
-              </p>
-
-              <div className="mt-4 space-y-2">
-                <AvailabilityRow
-                  label="Flight numbers"
-                  available={flights.filter(
-                    (item) =>
-                      item.flightNumber !== "—"
-                  ).length}
-                  total={flights.length}
-                />
-
-                <AvailabilityRow
-                  label="Aircraft data"
-                  available={flights.filter(
-                    (item) =>
-                      item.aircraftModel !==
-                      "—"
-                  ).length}
-                  total={flights.length}
-                />
-
-                <AvailabilityRow
-                  label="Terminal / gate"
-                  available={flights.filter(
-                    (item) =>
-                      item.terminal ||
-                      item.gate
-                  ).length}
-                  total={flights.length}
-                />
-
-                <AvailabilityRow
-                  label="Actual departure"
-                  available={flights.filter(
-                    (item) => item.actual
-                  ).length}
-                  total={flights.length}
-                />
-              </div>
+              <AvailabilityRow
+                label="Last Sync"
+                value={
+                  lastUpdated
+                    ? lastUpdated.toLocaleTimeString(
+                        [],
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )
+                    : "Waiting..."
+                }
+                active={Boolean(lastUpdated)}
+              />
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </main>
+
+      {/* =====================================================
+          MODAL
+      ===================================================== */}
 
       <FlightDetailsModal
         flight={selectedFlight}
-        onClose={() =>
-          setSelectedFlight(null)
-        }
+        onClose={() => setSelectedFlight(null)}
       />
     </div>
-  )
+  );
 }
 
-function ProgressRow({
+/* =========================================================
+   SUMMARY PROGRESS
+========================================================= */
+
+function SummaryProgress({
   label,
   value,
   total,
-  className,
+  icon: Icon,
+  barClass,
 }) {
   const percentage =
     total > 0
       ? Math.round((value / total) * 100)
-      : 0
+      : 0;
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="font-medium text-[#131e19]">
-          {label}
-        </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon
+            size={14}
+            className="text-neutral-light"
+          />
 
-        <span className="font-mono text-[#6f7a70]">
+          <span className="text-xs font-semibold text-neutral">
+            {label}
+          </span>
+        </div>
+
+        <span className="text-xs font-bold text-neutral">
           {value}
         </span>
       </div>
 
-      <div className="h-2 overflow-hidden rounded-full bg-[#e4f1e9]">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-primary-light">
         <div
-          className={`h-full rounded-full ${className}`}
+          className={`h-full rounded-full ${barClass}`}
           style={{
             width: `${percentage}%`,
           }}
         />
       </div>
     </div>
-  )
+  );
 }
 
-function TerminalSummary({
-  terminal,
-  flights,
-}) {
-  const value =
-    terminal === "Unknown"
-      ? flights.filter(
-          (flight) => !flight.terminal
-        ).length
-      : flights.filter(
-          (flight) =>
-            String(flight.terminal || "")
-              .toUpperCase() === terminal
-        ).length
+/* =========================================================
+   TERMINAL SUMMARY
+========================================================= */
 
+function TerminalSummary({ label, value }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-[#eaf7ee] p-2.5">
-      <span className="text-xs font-semibold text-[#131e19]">
-        {terminal}
-      </span>
+    <div className="rounded-xl bg-primary-light p-3">
+      <p className="text-xs font-semibold text-neutral">
+        {label}
+      </p>
 
-      <span className="font-mono text-xs font-bold text-[#005932]">
-        {value} departures
-      </span>
+      <p className="mt-1 text-xl font-bold text-primary-dark">
+        {value}
+      </p>
     </div>
-  )
+  );
 }
+
+/* =========================================================
+   AVAILABILITY ROW
+========================================================= */
 
 function AvailabilityRow({
   label,
-  available,
-  total,
+  value,
+  active,
 }) {
-  const percentage =
-    total > 0
-      ? Math.round((available / total) * 100)
-      : 0
-
   return (
-    <div className="flex items-center justify-between rounded-lg border border-[#d9e6dd] px-3 py-2">
-      <span className="text-xs text-[#3f4941]">
-        {label}
-      </span>
+    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <span
+          className={`h-2 w-2 rounded-full ${
+            active
+              ? "bg-success"
+              : "bg-neutral-light"
+          }`}
+        />
 
-      <span className="font-mono text-xs font-semibold text-[#131e19]">
-        {available}/{total} ({percentage}%)
+        <span className="text-xs font-semibold text-neutral-light">
+          {label}
+        </span>
+      </div>
+
+      <span className="text-xs font-bold text-neutral">
+        {value}
       </span>
     </div>
-  )
+  );
 }

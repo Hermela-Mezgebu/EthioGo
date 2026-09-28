@@ -6,26 +6,65 @@ import Signup from "./pages/Signup"
 import Dashboard from "./pages/Dashboard"
 import FlightSearch from "./pages/FlightSearch"
 import Arrivals from "./pages/Arrivals"
-import DashboardLayout from "./components/layout/DashboardLayout"
 import Departures from "./pages/Departures"
 import Airlines from "./pages/Airlines"
+import Settings from "./pages/Settings"
+import LiveFlights from "./pages/LiveFlights"
+import Favorites from "./pages/Favorites"
+
+import DashboardLayout from "./components/layout/DashboardLayout"
+import Map from "./pages/Map"
+import HelpSupport from "./pages/HelpSupport"
+
 function App() {
-  // ============================================
+  // =========================================================
+  // AEROTRACK USER STORAGE KEY
+  // =========================================================
+
+  const USER_STORAGE_KEY = "aerotrack_user"
+
+  // =========================================================
   // CURRENT PATH
-  // ============================================
+  // =========================================================
 
   const [currentPath, setCurrentPath] = useState(
     window.location.pathname
   )
 
-  // ============================================
+  // =========================================================
   // CURRENT USER
-  // ============================================
+  // =========================================================
 
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem(
-      "ethioflight_user"
+    /*
+      Try the new AeroTrack storage key first.
+    */
+
+    let savedUser = localStorage.getItem(
+      USER_STORAGE_KEY
     )
+
+    /*
+      Temporary fallback for users who logged in
+      before the project was renamed from EthioFlight.
+    */
+
+    if (!savedUser) {
+      savedUser = localStorage.getItem(
+        "ethioflight_user"
+      )
+
+      if (savedUser) {
+        localStorage.setItem(
+          USER_STORAGE_KEY,
+          savedUser
+        )
+
+        localStorage.removeItem(
+          "ethioflight_user"
+        )
+      }
+    }
 
     if (!savedUser) {
       return null
@@ -34,18 +73,23 @@ function App() {
     try {
       return JSON.parse(savedUser)
     } catch (error) {
-      localStorage.removeItem("ethioflight_user")
+      localStorage.removeItem(
+        USER_STORAGE_KEY
+      )
+
       return null
     }
   })
 
-  // ============================================
+  // =========================================================
   // HANDLE BROWSER BACK / FORWARD
-  // ============================================
+  // =========================================================
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname)
+      setCurrentPath(
+        window.location.pathname
+      )
     }
 
     window.addEventListener(
@@ -61,27 +105,45 @@ function App() {
     }
   }, [])
 
-  // ============================================
+  // =========================================================
   // NAVIGATION
-  // ============================================
+  // =========================================================
 
   const navigate = (path) => {
-    if (window.location.pathname === path) {
+    if (
+      window.location.pathname === path
+    ) {
       return
     }
 
-    window.history.pushState({}, "", path)
+    window.history.pushState(
+      {},
+      "",
+      path
+    )
 
     setCurrentPath(path)
+
+    /*
+      Scroll to the top when navigating
+      between pages.
+    */
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    })
   }
 
-  // ============================================
+  // =========================================================
   // AUTHENTICATION
-  // ============================================
+  // =========================================================
 
-  const handleAuthenticated = (authenticatedUser) => {
+  const handleAuthenticated = (
+    authenticatedUser
+  ) => {
     localStorage.setItem(
-      "ethioflight_user",
+      USER_STORAGE_KEY,
       JSON.stringify(authenticatedUser)
     )
 
@@ -90,64 +152,74 @@ function App() {
     navigate("/dashboard")
   }
 
-  // ============================================
+  // =========================================================
   // LOGOUT
-  // ============================================
+  // =========================================================
 
   const handleLogout = () => {
-    localStorage.removeItem("ethioflight_user")
+    localStorage.removeItem(
+      USER_STORAGE_KEY
+    )
 
     setUser(null)
 
     navigate("/")
   }
 
-  // ============================================
+  // =========================================================
   // LANDING PAGE
-  // ============================================
+  // =========================================================
 
   if (currentPath === "/") {
     return (
-      <LandingPage
-        user={user}
-        onLogin={() => navigate("/login")}
-        onSignup={() => navigate("/signup")}
-        onDashboard={() => navigate("/dashboard")}
-      />
+      <div className="min-h-screen bg-background text-neutral">
+        <LandingPage
+          user={user}
+          onLogin={() => navigate("/login")}
+          onSignup={() => navigate("/signup")}
+          onDashboard={() =>
+            navigate("/dashboard")
+          }
+        />
+      </div>
     )
   }
 
-  // ============================================
+  // =========================================================
   // LOGIN
-  // ============================================
+  // =========================================================
 
   if (currentPath === "/login") {
     return (
-      <Login
-        onLogin={handleAuthenticated}
-        onSignup={() => navigate("/signup")}
-        onBack={() => navigate("/")}
-      />
+      <div className="min-h-screen bg-background text-neutral">
+        <Login
+          onLogin={handleAuthenticated}
+          onSignup={() => navigate("/signup")}
+          onBack={() => navigate("/")}
+        />
+      </div>
     )
   }
 
-  // ============================================
+  // =========================================================
   // SIGN UP
-  // ============================================
+  // =========================================================
 
   if (currentPath === "/signup") {
     return (
-      <Signup
-        onSignup={handleAuthenticated}
-        onLogin={() => navigate("/login")}
-        onBack={() => navigate("/")}
-      />
+      <div className="min-h-screen bg-background text-neutral">
+        <Signup
+          onSignup={handleAuthenticated}
+          onLogin={() => navigate("/login")}
+          onBack={() => navigate("/")}
+        />
+      </div>
     )
   }
 
-  // ============================================
+  // =========================================================
   // PROTECTED DASHBOARD PAGES
-  // ============================================
+  // =========================================================
 
   const protectedPaths = [
     "/dashboard",
@@ -160,124 +232,221 @@ function App() {
     "/airlines",
     "/map",
     "/settings",
+    "/favorites",
+    "/support"
   ]
 
   const isProtectedPage =
     protectedPaths.includes(currentPath)
 
+  // =========================================================
+  // PROTECTED PAGE HANDLING
+  // =========================================================
+
   if (isProtectedPage) {
-    // --------------------------------------------
-    // User is not logged in
-    // --------------------------------------------
+    // -------------------------------------------------------
+    // USER IS NOT LOGGED IN
+    // -------------------------------------------------------
 
     if (!user) {
       return (
-        <Login
-          onLogin={handleAuthenticated}
-          onSignup={() => navigate("/signup")}
-          onBack={() => navigate("/")}
-        />
+        <div className="min-h-screen bg-background text-neutral">
+          <Login
+            onLogin={handleAuthenticated}
+            onSignup={() =>
+              navigate("/signup")
+            }
+            onBack={() => navigate("/")}
+          />
+        </div>
       )
     }
 
-    // --------------------------------------------
-    // User is logged in
-    // --------------------------------------------
+    // -------------------------------------------------------
+    // USER IS LOGGED IN
+    // -------------------------------------------------------
 
     return (
-      <DashboardLayout
-        currentPath={currentPath}
-        user={user}
-        onLogout={handleLogout}
-      >
-        {/* ========================================
-            DASHBOARD
-        ======================================== */}
+      <div className="min-h-screen bg-background text-neutral">
+        <DashboardLayout
+          currentPath={currentPath}
+          user={user}
+          onLogout={handleLogout}
+        >
+          {/* =================================================
+              DASHBOARD
+          ================================================= */}
 
-        {currentPath === "/dashboard" && (
-          <Dashboard />
-        )}
+          {currentPath === "/dashboard" && (
+            <div className="min-h-full bg-background">
+              <Dashboard />
+            </div>
+          )}
 
-        {/* ========================================
-            FLIGHTS
-        ======================================== */}
+          {/* =================================================
+              FLIGHT SEARCH
+          ================================================= */}
 
-        {currentPath === "/flights" && (
-          <FlightSearch />
-        )}
+          {currentPath === "/flights" && (
+            <div className="min-h-full bg-background">
+              <FlightSearch />
+            </div>
+          )}
 
-        {currentPath === "/departures" && (
-          <Departures />
-        )}
+          {/* =================================================
+              DEPARTURES
+          ================================================= */}
 
-        {/* ========================================
-            FUTURE PAGES
-        ======================================== */}
+          {currentPath === "/departures" && (
+            <div className="min-h-full bg-background">
+              <Departures />
+            </div>
+          )}
 
-        {currentPath === "/live-map" && (
-          <div className="p-6">
-            Live Flights page coming soon.
-          </div>
-        )}
+          {/* =================================================
+              ARRIVALS
+          ================================================= */}
 
-        
+          {currentPath === "/arrivals" && (
+            <div className="min-h-full bg-background">
+              <Arrivals />
+            </div>
+          )}
 
-        {currentPath === "/arrivals" && (
-        <Arrivals />
-      )}
+          {/* =================================================
+              AIRLINES
+          ================================================= */}
 
-        {currentPath === "/routes" && (
-          <div className="p-6">
-            Routes page coming soon.
-          </div>
-        )}
+          {currentPath === "/airlines" && (
+            <div className="min-h-full bg-background">
+              <Airlines />
+            </div>
+          )}
 
-        {currentPath === "/airports" && (
-          <div className="p-6">
-            Airports page coming soon.
-          </div>
-        )}
+          {currentPath === "/support" && (
+            <div className="min-h-full bg-background">
+              <HelpSupport />
+            </div>
+          )}
 
-        {currentPath === "/airlines" && (
-          <Airlines />
-        )}
 
-        {currentPath === "/map" && (
-          <div className="p-6">
-            Live Map page coming soon.
-          </div>
-        )}
 
-        {currentPath === "/settings" && (
-          <div className="p-6">
-            Settings page coming soon.
-          </div>
-        )}
-      </DashboardLayout>
+          {/* =================================================
+              LIVE FLIGHTS
+          ================================================= */}
+
+          {currentPath === "/live-map" && (
+            <div className="min-h-full bg-background">
+             <LiveFlights />
+            </div>
+          )}
+
+          {/* =================================================
+              ROUTES
+          ================================================= */}
+
+          {currentPath === "/routes" && (
+            <div className="min-h-full bg-background">
+              <div className="flex min-h-[500px] items-center justify-center p-6">
+                <div className="app-card w-full max-w-lg p-8 text-center">
+                  <h1 className="text-lg font-bold text-neutral">
+                    Routes
+                  </h1>
+
+                  <p className="mt-2 text-sm leading-6 text-neutral-light">
+                    Flight route exploration will be
+                    available here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =================================================
+              AIRPORTS
+          ================================================= */}
+
+          {currentPath === "/airports" && (
+            <div className="min-h-full bg-background">
+              <div className="flex min-h-[500px] items-center justify-center p-6">
+                <div className="app-card w-full max-w-lg p-8 text-center">
+                  <h1 className="text-lg font-bold text-neutral">
+                    Airports
+                  </h1>
+
+                  <p className="mt-2 text-sm leading-6 text-neutral-light">
+                    Airport exploration and airport
+                    details will be available here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =================================================
+              LIVE MAP
+          ================================================= */}
+
+          {currentPath === "/map" && (
+            <div className="min-h-full bg-background">
+              <Map />
+            </div>
+          )}
+
+          {currentPath === "/favorites" && (
+            <div className="min-h-full bg-background">
+              <Favorites />
+            </div>
+          )}
+
+          {/* =================================================
+              SETTINGS
+          ================================================= */}
+
+          {currentPath === "/settings" && (
+            <div className="min-h-full bg-background">
+              <Settings />
+            </div>
+          )}
+        </DashboardLayout>
+      </div>
     )
   }
 
-  // ============================================
+  // =========================================================
   // UNKNOWN PAGE
-  // ============================================
+  // =========================================================
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
-        <h1 className="text-xl font-bold text-neutral">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6 text-neutral">
+      <div className="app-card w-full max-w-md p-8 text-center">
+
+        {/* Logo mark */}
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
+          <span className="text-xl font-bold">
+            A
+          </span>
+        </div>
+
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-primary">
+          AeroTrack
+        </p>
+
+        <h1 className="mt-2 text-2xl font-bold text-neutral">
           Page Not Found
         </h1>
 
-        <p className="mt-2 text-sm text-neutral/60">
-          The page you are looking for does not exist.
+        <p className="mt-2 text-sm leading-6 text-neutral-light">
+          The page you are looking for does not
+          exist or may have been moved.
         </p>
 
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="mt-6 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+          className="primary-button mt-6 w-full"
         >
-          Go Home
+          Go to AeroTrack
         </button>
       </div>
     </div>

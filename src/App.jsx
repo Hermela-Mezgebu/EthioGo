@@ -9,6 +9,8 @@ import Arrivals from "./pages/Arrivals"
 import DashboardLayout from "./components/layout/DashboardLayout"
 import Departures from "./pages/Departures"
 import Airlines from "./pages/Airlines"
+import LiveFights from "./pages/LiveFlights"
+
 function App() {
   // ============================================
   // CURRENT PATH
@@ -215,9 +217,7 @@ function App() {
         ======================================== */}
 
         {currentPath === "/live-map" && (
-          <div className="p-6">
-            Live Flights page coming soon.
-          </div>
+          <LiveFights />
         )}
 
         

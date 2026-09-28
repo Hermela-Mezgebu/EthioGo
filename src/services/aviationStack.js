@@ -4,6 +4,9 @@ const API_BASE_URL =
 
 const API_KEY = import.meta.env.VITE_AVIATIONSTACK_ACCESS_KEY;
 
+/**
+ * Generic AviationStack request
+ */
 async function aviationRequest(endpoint, params = {}) {
   if (!API_KEY) {
     throw new Error(
@@ -50,6 +53,16 @@ async function aviationRequest(endpoint, params = {}) {
   return data;
 }
 
+/**
+ * Get live flights
+ *
+ * Supported filters:
+ * - depIata
+ * - arrIata
+ * - flightNumber
+ * - flightStatus
+ * - flightDate
+ */
 export async function getLiveFlights({
   depIata,
   arrIata,
@@ -64,22 +77,46 @@ export async function getLiveFlights({
     offset,
   };
 
-  if (depIata) params.dep_iata = depIata;
-  if (arrIata) params.arr_iata = arrIata;
-  if (flightNumber) params.flight_number = flightNumber;
-  if (flightStatus) params.flight_status = flightStatus;
-  if (flightDate) params.flight_date = flightDate;
+  if (depIata) {
+    params.dep_iata = depIata;
+  }
+
+  if (arrIata) {
+    params.arr_iata = arrIata;
+  }
+
+  if (flightNumber) {
+    params.flight_number = flightNumber;
+  }
+
+  if (flightStatus) {
+    params.flight_status = flightStatus;
+  }
+
+  if (flightDate) {
+    params.flight_date = flightDate;
+  }
 
   return aviationRequest("flights", params);
 }
 
+/**
+ * Search for a specific flight
+ */
 export async function searchFlight(flightNumber) {
+  if (!flightNumber) {
+    throw new Error("Flight number is required.");
+  }
+
   return getLiveFlights({
     flightNumber,
     limit: 10,
   });
 }
 
+/**
+ * Get airlines
+ */
 export async function getAirlines({
   search,
   limit = 100,
@@ -90,11 +127,16 @@ export async function getAirlines({
     offset,
   };
 
-  if (search) params.search = search;
+  if (search) {
+    params.search = search;
+  }
 
   return aviationRequest("airlines", params);
 }
 
+/**
+ * Get airports
+ */
 export async function getAirports({
   search,
   limit = 100,
@@ -105,11 +147,16 @@ export async function getAirports({
     offset,
   };
 
-  if (search) params.search = search;
+  if (search) {
+    params.search = search;
+  }
 
   return aviationRequest("airports", params);
 }
 
+/**
+ * Get routes
+ */
 export async function getRoutes({
   airlineIata,
   depIata,
@@ -122,9 +169,27 @@ export async function getRoutes({
     offset,
   };
 
-  if (airlineIata) params.airline_iata = airlineIata;
-  if (depIata) params.dep_iata = depIata;
-  if (arrIata) params.arr_iata = arrIata;
+  if (airlineIata) {
+    params.airline_iata = airlineIata;
+  }
+
+  if (depIata) {
+    params.dep_iata = depIata;
+  }
+
+  if (arrIata) {
+    params.arr_iata = arrIata;
+  }
 
   return aviationRequest("routes", params);
+}
+
+/**
+ * Simple connection test
+ */
+export async function testAviationStackConnection() {
+  return getLiveFlights({
+    limit: 1,
+    offset: 0,
+  });
 }

@@ -11,7 +11,7 @@ import Airlines from "./pages/Airlines"
 import Settings from "./pages/Settings"
 import LiveFlights from "./pages/LiveFlights"
 import Favorites from "./pages/Favorites"
-
+import Airports from "./pages/Airports"
 import DashboardLayout from "./components/layout/DashboardLayout"
 import Map from "./pages/Map"
 import HelpSupport from "./pages/HelpSupport"
@@ -368,18 +368,7 @@ function App() {
 
           {currentPath === "/airports" && (
             <div className="min-h-full bg-background">
-              <div className="flex min-h-[500px] items-center justify-center p-6">
-                <div className="app-card w-full max-w-lg p-8 text-center">
-                  <h1 className="text-lg font-bold text-neutral">
-                    Airports
-                  </h1>
-
-                  <p className="mt-2 text-sm leading-6 text-neutral-light">
-                    Airport exploration and airport
-                    details will be available here.
-                  </p>
-                </div>
-              </div>
+              <Airports />
             </div>
           )}
 
